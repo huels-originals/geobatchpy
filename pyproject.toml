@@ -8,6 +8,9 @@ readme = "README.md"
 license = "MIT"
 homepage = "https://github.com/kinsvater/geoapify"
 repository = "https://github.com/kinsvater/geoapify"
+include = [
+    "LICENSE",
+]
 
 [tool.poetry.dependencies]
 python = ">=3.7,<4.0"
