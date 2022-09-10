@@ -1,8 +1,13 @@
 [tool.poetry]
 name = "geoapify"
 version = "0.1.0"
-description = ""
-authors = ["Paul Kinsvater <paul.kinsvater@gmail.com>"]
+description = "Python client for geopify.com REST API."
+authors = ["Paul Kinsvater <paul.kinsvater@gmail.com>", "Nikita Butsch <nikitabutsch@gmail.com>"]
+keywords = ["geoapify", "geocoding"]
+readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/kinsvater/geoapify"
+repository = "https://github.com/kinsvater/geoapify"
 
 [tool.poetry.dependencies]
 python = ">=3.7,<4.0"
