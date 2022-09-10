@@ -1,0 +1,16 @@
+.idea
+.pytest_cache
+
+__pycache__/*
+.cache/*
+.*.swp
+*/.ipynb_checkpoints/*
+.DS_Store
+
+*.egg
+*.eggs/
+.installed.cfg
+*.egg-info
+
+.venv*/
+.conda*/
