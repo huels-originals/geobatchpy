@@ -6,7 +6,7 @@ __pycache__
 .*.swp
 */.ipynb_checkpoints/*
 .DS_Store
-
+dist/
 *.egg
 *.eggs/
 .installed.cfg
