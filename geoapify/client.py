@@ -1,6 +1,7 @@
 import logging
 import math
 import time
+from typing import Dict, List
 
 import requests
 
@@ -12,7 +13,7 @@ class Client:
         self._headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         self._logger = logging.getLogger(__name__)
 
-    def geocode(self, text: str = None, parameters: dict[str, str] = None) -> dict:
+    def geocode(self, text: str = None, parameters: Dict[str, str] = None) -> dict:
         request_url = 'https://api.geoapify.com/v1/geocode/search?apiKey={}'.format(self._api_key)
 
         params = {'text': text} if text is not None else dict()
@@ -27,8 +28,8 @@ class Client:
 
         return requests.get(url=request_url, params=params, headers=self._headers).json()
 
-    def batch_geocode(self, addresses: list[str], batch_len: int = 1000, sleep_time: int = 5,
-                      parameters: dict[str, str] = None) -> list[dict]:
+    def batch_geocode(self, addresses: List[str], batch_len: int = 1000, sleep_time: int = 5,
+                      parameters: Dict[str, str] = None) -> List[dict]:
         """Returns batch geocoding results as a list of dictionaries.
 
         We store job URLs in a cached file. This allows to recover URLs if an unexpected error
@@ -51,7 +52,7 @@ class Client:
         return result_responses
 
     def _request_batch_geocoding_and_return_result_urls(
-            self, request_url: str, addresses: list[str], batch_len: int, parameters: dict = None) -> list[str]:
+            self, request_url: str, addresses: List[str], batch_len: int, parameters: dict = None) -> List[str]:
         """Triggers batch geocoding on server and returns URLs to be used in GET requests for obtaining results.
 
         """
