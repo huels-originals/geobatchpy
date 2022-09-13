@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "geoapify"
-version = "0.1.0"
+version = "0.1.1"
 description = "Python client for geopify.com REST API."
 authors = ["Paul Kinsvater <paul.kinsvater@gmail.com>", "Nikita Butsch <nikitabutsch@gmail.com>"]
 keywords = ["geoapify", "geocoding"]
