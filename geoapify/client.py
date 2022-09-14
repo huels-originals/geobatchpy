@@ -1,9 +1,9 @@
 import logging
-import math
-import time
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple
 
 import requests
+
+from geoapify._batch import request_batch_processing_and_get_urls, wait_for_batches_to_complete
 
 
 class Client:
@@ -84,10 +84,10 @@ class Client:
         """
         request_url = 'https://api.geoapify.com/v1/batch/geocode/search?apiKey={}'.format(self._api_key)
 
-        result_urls = self._request_batch_processing_and_return_result_urls(
+        result_urls = request_batch_processing_and_get_urls(
             request_url=request_url, inputs=addresses, batch_len=batch_len, parameters=parameters)
 
-        return self._wait_for_batches_to_complete_and_return_results(result_urls=result_urls, sleep_time=sleep_time)
+        return wait_for_batches_to_complete(result_urls=result_urls, sleep_time=sleep_time)
 
     def batch_reverse_geocode(self, geocodes: List[Tuple[float, float]], batch_len: int = 1000, sleep_time: int = 5,
                               parameters: Dict[str, str] = None) -> List[dict]:
@@ -100,47 +100,7 @@ class Client:
         """
         request_url = 'https://api.geoapify.com/v1/batch/geocode/reverse?&apiKey={}'.format(self._api_key)
 
-        result_urls = self._request_batch_processing_and_return_result_urls(
+        result_urls = request_batch_processing_and_get_urls(
             request_url=request_url, inputs=geocodes, batch_len=batch_len, parameters=parameters)
 
-        return self._wait_for_batches_to_complete_and_return_results(result_urls=result_urls, sleep_time=sleep_time)
-
-    def _request_batch_processing_and_return_result_urls(
-            self, request_url: str, inputs: List[Any], batch_len: int, parameters: dict = None) -> List[str]:
-        """Triggers batch process on server and returns URLs to be used in GET requests for obtaining results.
-
-        """
-        batch_len = min(batch_len, 1000)  # limit of 1000 dictated by API
-
-        batches = []
-        for i in range(math.ceil(len(inputs) / batch_len)):
-            batches.append(inputs[i * batch_len:(i + 1) * batch_len])
-
-        result_urls = []
-        for batch in batches:
-            url = requests.post(request_url, json=batch, headers=self._headers, params=parameters).json()['url']
-            self._logger.info(f'Batch processing request POSTed - url=\'{url}\'.')
-            result_urls.append(url)
-            time.sleep(0.5)
-
-        return result_urls
-
-    def _wait_for_batches_to_complete_and_return_results(self, result_urls: List[str], sleep_time: int) -> List[dict]:
-        """Waits for the completion of all batch processing requests and returns results as a list of dictionaries.
-
-        A previous POST request responded with `get_url` and geocoding computation has been triggered. A GET request
-        using `get_url` as the argument will contain the geocoding results only after computation is finished.
-        Otherwise the response will be rather empty.
-        """
-        result_responses = []
-        for url in result_urls:
-            while True:
-                get_response = requests.get(url, headers=self._headers).json()
-                try:
-                    _ = get_response[0]['query']
-                    self._logger.info(f'Batch processing behind url=\'{url}\' finished.')
-                    break
-                except KeyError:
-                    time.sleep(max(sleep_time, 2))
-            result_responses += get_response
-        return result_responses
+        return wait_for_batches_to_complete(result_urls=result_urls, sleep_time=sleep_time)
