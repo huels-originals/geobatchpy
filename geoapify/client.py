@@ -3,14 +3,13 @@ from typing import Dict, List, Tuple
 
 import requests
 
-from geoapify._batch import request_batch_processing_and_get_urls, wait_for_batches_to_complete
+from geoapify._batch import request_batch_processing_and_get_urls, wait_for_batches_to_complete, HEADERS
 
 
 class Client:
     def __init__(self, api_key: str):
         self._api_key = api_key
 
-        self._headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         self._logger = logging.getLogger(__name__)
 
     def place_details(self, place_id: str = None, longitude: float = None, latitude: float = None,
@@ -41,7 +40,7 @@ class Client:
         if language is not None:
             params['lang'] = language
 
-        return requests.get(url=request_url, params=params, headers=self._headers).json()
+        return requests.get(url=request_url, params=params, headers=HEADERS).json()
 
     def geocode(self, text: str = None, parameters: Dict[str, str] = None) -> dict:
         """Returns geocoding results as a dictionary.
@@ -59,7 +58,7 @@ class Client:
         if parameters is not None:
             params = {**params, **parameters}
 
-        return requests.get(url=request_url, params=params, headers=self._headers).json()
+        return requests.get(url=request_url, params=params, headers=HEADERS).json()
 
     def reverse_geocode(self, longitude: float, latitude: float) -> dict:
         """Returns reverse geocoding results as a dictionary.
@@ -71,7 +70,7 @@ class Client:
         request_url = 'https://api.geoapify.com/v1/geocode/reverse?apiKey={}'.format(self._api_key)
         params = {'lat': str(latitude), 'lon': str(longitude)}
 
-        return requests.get(url=request_url, params=params, headers=self._headers).json()
+        return requests.get(url=request_url, params=params, headers=HEADERS).json()
 
     def batch_geocode(self, addresses: List[str], batch_len: int = 1000, sleep_time: int = 5,
                       parameters: Dict[str, str] = None) -> List[dict]:
