@@ -14,3 +14,5 @@ dist/
 
 .venv*/
 .conda*/
+docs/_rst/*
+docs/_build/*
