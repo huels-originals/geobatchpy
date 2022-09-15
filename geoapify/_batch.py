@@ -11,6 +11,7 @@ from datetime import datetime
 import time
 from typing import List, Any, Union
 from pathlib import Path
+import json
 
 import requests
 
@@ -30,7 +31,7 @@ def request_batch_processing_and_get_urls(
     if inputs is not None:
         pass
     elif inputs_file_path is not None:
-        inputs = read_inputs_from_file(file_path=inputs_file_path)
+        inputs = read_list_from_json(file_path=inputs_file_path)
     else:
         raise ValueError('\'inputs\' abd \'inputs_file_path\' cannot be both None.')
 
@@ -41,14 +42,21 @@ def request_batch_processing_and_get_urls(
         batches.append(inputs[i * batch_len:(i + 1) * batch_len])
 
     result_urls = []
-    for batch in batches:
-        url = requests.post(request_url, json=batch, headers=HEADERS, params=parameters).json()['url']
+    for i, batch in enumerate(batches):
+        try:
+            response = requests.post(request_url, json=batch, headers=HEADERS, params=parameters)
+        except requests.exceptions.RequestException as e:
+            raise SystemExit(e)
+        if response.status_code not in (200, 202):
+            raise ValueError(f'The service failed to create the job for batch {i}' +
+                             f' - check input range {i * batch_len}:{min((i + 1) * batch_len, len(inputs))}.')
+        url = response.json()['url']
         result_urls.append(url)
         time.sleep(0.1)
 
     if write_urls_to is not None:
         header = f'Endpoint={request_url}, Datetime={datetime.now()}'
-        write_urls_to_file(urls=result_urls, file_path=write_urls_to, header=header)
+        write_list_to_json(data=result_urls, file_path=write_urls_to, attribute_name='urls', meta_data=header)
 
     return result_urls
 
@@ -64,42 +72,35 @@ def wait_for_batches_to_complete(result_urls: List[str] = None, result_urls_file
     if result_urls is not None:
         pass
     elif result_urls_file_path is not None:
-        result_urls = read_urls_from_file(file_path=result_urls_file_path)
+        result_urls = read_list_from_json(file_path=result_urls_file_path, attribute_name='urls')
     else:
         raise ValueError('\'result_urls\' and \'result_urls_path\' cannot be both None.')
 
     result_responses = []
     for url in result_urls:
         while True:
-            get_response = requests.get(url, headers=HEADERS).json()
+            response = requests.get(url, headers=HEADERS).json()
             try:
-                _ = get_response[0]['query']
+                _ = response[0]['query']
                 break
             except KeyError:
                 time.sleep(max(sleep_time, 2))
-        result_responses += get_response
+        result_responses += response
     return result_responses
 
 
-def write_urls_to_file(urls: List[str], file_path: Union[str, Path], header: str = None) -> None:
-    file_path = Path(file_path)
-    with open(file_path, 'w') as f:
-        if header is not None and not header.startswith('https'):
-            f.write(f'{header}\n')
-        elif header is not None and header.startswith('https'):
-            raise ValueError('Headers starting with \'https\' are forbidden.')
-        for url in urls:
-            f.write(f'{url}\n')
+def write_list_to_json(data: List[Any], file_path: Union[str, Path], attribute_name: str = 'data',
+                       meta_data: Any = None) -> None:
+    data = {
+        'meta_data': meta_data,
+        attribute_name: data
+    }
+    with open(Path(file_path), 'w') as f:
+        json.dump(data, fp=f, indent=4)
 
 
-def read_inputs_from_file(file_path: Union[str, Path]) -> List[Any]:
-    pass
-
-
-def read_urls_from_file(file_path: Union[str, Path]) -> List[str]:
-    urls = []
+def read_list_from_json(file_path: Union[str, Path], attribute_name: str = 'data') -> List[Any]:
     with open(Path(file_path), 'r') as f:
-        for row in f:
-            if row.startswith('https'):
-                urls.append(row.replace('\n', ''))
-    return urls
+        data = json.load(fp=f)
+        logger.info(f'Reading attribute \'{attribute_name}\' from file \'{file_path}\'.')
+    return data[attribute_name]

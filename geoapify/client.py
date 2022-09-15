@@ -7,6 +7,12 @@ from geoapify._batch import request_batch_processing_and_get_urls, wait_for_batc
 
 
 class Client:
+    _url_place_details = 'https://api.geoapify.com/v2/place-details?apiKey={}'
+    _url_geocode = 'https://api.geoapify.com/v1/geocode/search?apiKey={}'
+    _url_reverse_geocode = 'https://api.geoapify.com/v1/geocode/reverse?apiKey={}'
+    _url_batch_geocode = 'https://api.geoapify.com/v1/batch/geocode/search?apiKey={}'
+    _url_batch_reverse_geocode = 'https://api.geoapify.com/v1/batch/geocode/reverse?&apiKey={}'
+
     def __init__(self, api_key: str):
         self._api_key = api_key
 
@@ -26,7 +32,7 @@ class Client:
         :param language: 2-character iso language code.
         :return: dictionary of location details.
         """
-        request_url = 'https://api.geoapify.com/v2/place-details?apiKey={}'.format(self._api_key)
+        request_url = self._url_place_details.format(self._api_key)
         params = dict()
         if place_id is not None:
             params['id'] = place_id
@@ -52,7 +58,7 @@ class Client:
         :param parameters: structured search as key value pairs in a dictionary.
         :return: geocoding results as a dictionary.
         """
-        request_url = 'https://api.geoapify.com/v1/geocode/search?apiKey={}'.format(self._api_key)
+        request_url = self._url_geocode.format(self._api_key)
 
         params = {'text': text} if text is not None else dict()
         if parameters is not None:
@@ -67,7 +73,7 @@ class Client:
         :param longitude: float or string representing longitude.
         :return: result as a dictionary.
         """
-        request_url = 'https://api.geoapify.com/v1/geocode/reverse?apiKey={}'.format(self._api_key)
+        request_url = self._url_reverse_geocode.format(self._api_key)
         params = {'lat': str(latitude), 'lon': str(longitude)}
 
         return requests.get(url=request_url, params=params, headers=HEADERS).json()
@@ -81,10 +87,9 @@ class Client:
         :param batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
         :param parameters: optional parameters as key value paris. See the geoapify documentation.
         """
-        request_url = 'https://api.geoapify.com/v1/batch/geocode/search?apiKey={}'.format(self._api_key)
-
         result_urls = request_batch_processing_and_get_urls(
-            request_url=request_url, inputs=addresses, batch_len=batch_len, parameters=parameters)
+            request_url=self._url_batch_geocode.format(self._api_key), inputs=addresses, batch_len=batch_len,
+            parameters=parameters)
 
         return wait_for_batches_to_complete(result_urls=result_urls, sleep_time=sleep_time)
 
@@ -97,9 +102,8 @@ class Client:
         :param sleep_time: sleep time in seconds between every request for results of batch processing.
         :param parameters: optional parameters as dictionary. See geoapify.com documentation.
         """
-        request_url = 'https://api.geoapify.com/v1/batch/geocode/reverse?&apiKey={}'.format(self._api_key)
-
         result_urls = request_batch_processing_and_get_urls(
-            request_url=request_url, inputs=geocodes, batch_len=batch_len, parameters=parameters)
+            request_url=self._url_batch_reverse_geocode.format(self._api_key), inputs=geocodes, batch_len=batch_len,
+            parameters=parameters)
 
         return wait_for_batches_to_complete(result_urls=result_urls, sleep_time=sleep_time)
