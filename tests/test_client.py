@@ -41,7 +41,7 @@ class TestClient:
             def json():
                 return RES_TEST_GEOCODE
 
-        # monkeypatch.setattr(requests, 'get', MockRequestsGet)
+        monkeypatch.setattr(requests, 'get', MockRequestsGet)
 
         client = Client(api_key=self.API_KEY)
 
@@ -109,6 +109,14 @@ class TestClient:
         assert res[2]['country'] == 'Allemagne'
 
     def test_batch_reverse_geocode(self, monkeypatch):
+        class MockRequestsPost:
+            def __init__(self, request_url, json, headers, params):
+                pass
+
+            @staticmethod
+            def json():
+                return {'url': ''}
+
         class MockRequestsGet:
             global content_ind
             content_ind = -1
@@ -122,6 +130,7 @@ class TestClient:
                 content_ind += 1
                 return RES_TEST_BATCH_REVERSE_GEOCODE[content_ind]
 
+        monkeypatch.setattr(requests, 'post', MockRequestsPost)
         monkeypatch.setattr(requests, 'get', MockRequestsGet)
 
         client = Client(api_key=self.API_KEY)
