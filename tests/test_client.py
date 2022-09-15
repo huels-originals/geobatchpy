@@ -74,7 +74,7 @@ class TestClient:
     def test_batch_geocode(self, monkeypatch):
         class MockRequestsPost:
             def __init__(self, request_url, json, headers, params):
-                pass
+                self.status_code = 200
 
             @staticmethod
             def json():
@@ -110,15 +110,16 @@ class TestClient:
     def test_batch_reverse_geocode(self, monkeypatch):
         class MockRequestsPost:
             def __init__(self, request_url, json, headers, params):
-                pass
+                self.status_code = 200
 
             @staticmethod
             def json():
                 return {'url': ''}
 
+        global content_ind
+        content_ind = -1
+
         class MockRequestsGet:
-            global content_ind
-            content_ind = -1
 
             def __init__(self, url, headers):
                 pass
