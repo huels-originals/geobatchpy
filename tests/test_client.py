@@ -1,11 +1,10 @@
-import os
 import requests
 
 from geoapify.client import Client
 
 
 class TestClient:
-    API_KEY = os.environ['GEOAPIFY_KEY']  # add yours to your environment variables
+    API_KEY = 'not-required-since-we-mock'
 
     def test_place_details(self, monkeypatch):
         class MockRequestsGet:
@@ -144,9 +143,8 @@ class TestClient:
         assert res[1]['country'] == 'Belgium'
         assert res[2]['city'] == 'Bucha'
 
-    # API responses of the tests:
 
-
+# API responses of the tests:
 RES_TEST_PLACE_DETAILS = {
     "type": "FeatureCollection",
     "features": [
