@@ -43,7 +43,7 @@ class BatchClient:
         result_urls = self.post_batch_jobs_and_get_job_urls(
             api='/v1/geocode/search', inputs=inputs, parameters=parameters, batch_len=batch_len)
 
-        sleep_time = self._get_sleep_time(number_of_items=len(addresses))
+        sleep_time = self._get_sleep_time(number_of_items=len(inputs))
         results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
 
         if simplify_output:
@@ -69,7 +69,7 @@ class BatchClient:
         result_urls = self.post_batch_jobs_and_get_job_urls(
             api='/v1/geocode/reverse', inputs=inputs, parameters=parameters, batch_len=batch_len)
 
-        sleep_time = self._get_sleep_time(number_of_items=len(geocodes))
+        sleep_time = self._get_sleep_time(number_of_items=len(inputs))
         results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
 
         if simplify_output:
@@ -112,7 +112,7 @@ class BatchClient:
         result_urls = self.post_batch_jobs_and_get_job_urls(
             api='/v2/place-details', inputs=inputs, parameters=params, batch_len=batch_len)
 
-        sleep_time = self._get_sleep_time(number_of_items=len(place_ids))
+        sleep_time = self._get_sleep_time(number_of_items=len(inputs))
         results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
 
         return results
