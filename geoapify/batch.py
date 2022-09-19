@@ -22,7 +22,7 @@ class BatchClient:
         self._lock = Lock()
         self._number_completed_jobs = 0
         self._total_number_jobs = 0
-        self._HEADERS = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+        self._headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         self._logger = logging.getLogger(__name__)
 
     def geocode(self, addresses: List[str], batch_len: int = 1000, parameters: Dict[str, str] = None,
@@ -156,7 +156,7 @@ class BatchClient:
             try:
                 response = requests.post(
                     'https://api.geoapify.com/v1/batch?apiKey={}'.format(self._api_key), json=data,
-                    headers=self._HEADERS)
+                    headers=self._headers)
             except requests.exceptions.RequestException as e:
                 raise SystemExit(e)
             if response.status_code not in (200, 202):
@@ -192,7 +192,7 @@ class BatchClient:
     def _task(self, url: str, sleep_time: int) -> List[dict]:
         job_id = url.split('&apiKey')[0]
         while True:
-            response = requests.get(url, headers=self._HEADERS).json()
+            response = requests.get(url, headers=self._headers).json()
             try:
                 _ = response['results']
                 with self._lock:
