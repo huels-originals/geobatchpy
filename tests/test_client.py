@@ -1,6 +1,10 @@
+import logging
+
 import requests
 
 from geoapify.client import Client
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 class TestClient:

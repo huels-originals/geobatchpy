@@ -7,21 +7,22 @@ use GET requests to ask if a job is completed. If it is, you can GET the results
 """
 import logging
 import math
-from datetime import datetime
 import time
-from typing import List, Any, Union, Dict, Tuple
-from pathlib import Path
-import json
+from concurrent.futures import ThreadPoolExecutor
+from threading import Lock
+from typing import List, Any, Dict, Tuple
 
 import requests
-
-HEADERS = {'Accept': 'application/json', 'Content-Type': 'application/json'}
 
 
 class BatchClient:
 
     def __init__(self, api_key: str):
         self._api_key = api_key
+        self._lock = Lock()
+        self._number_completed_jobs = 0
+        self._total_number_jobs = 0
+        self._HEADERS = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         self._logger = logging.getLogger(__name__)
 
     def geocode(self, addresses: List[str], batch_len: int = 1000, parameters: Dict[str, str] = None,
@@ -30,7 +31,8 @@ class BatchClient:
         result_urls = self.post_batch_jobs_and_get_job_urls(
             api='/v1/geocode/search', inputs=inputs, parameters=parameters, batch_len=batch_len)
 
-        results = self.monitor_batch_jobs_and_get_results(result_urls=result_urls)
+        sleep_time = self._get_sleep_time(batch_len=batch_len)
+        results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
 
         if simplify_output:
             return [{**res['result']['results'][0], 'query': res['result']['query']} for res in results]
@@ -43,7 +45,8 @@ class BatchClient:
         result_urls = self.post_batch_jobs_and_get_job_urls(
             api='/v1/geocode/reverse', inputs=inputs, parameters=parameters, batch_len=batch_len)
 
-        results = self.monitor_batch_jobs_and_get_results(result_urls=result_urls)
+        sleep_time = self._get_sleep_time(batch_len=batch_len)
+        results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
 
         if simplify_output:
             return [res['result']['results'][0] for res in results]
@@ -51,8 +54,7 @@ class BatchClient:
             return results
 
     def place_details(self, place_ids: List[str] = None, geocodes: List[Tuple[float, float]] = None,
-                      batch_len: int = 1000, parameters: Dict[str, str] = None,
-                      features: List[str] = None, language: str = None) -> List[dict]:
+                      batch_len: int = 1000, features: List[str] = None, language: str = None) -> List[dict]:
         if place_ids is not None:
             inputs = [{'params': {'id': val}} for val in place_ids]
         elif geocodes is not None:
@@ -69,14 +71,13 @@ class BatchClient:
         result_urls = self.post_batch_jobs_and_get_job_urls(
             api='/v2/place-details', inputs=inputs, parameters=params, batch_len=batch_len)
 
-        results = self.monitor_batch_jobs_and_get_results(result_urls=result_urls)
+        sleep_time = self._get_sleep_time(batch_len=batch_len)
+        results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
 
         return results
 
-    def post_batch_jobs_and_get_job_urls(self, api: str, inputs: List[Any] = None,
-                                         inputs_file_path: Union[str, Path] = None,
-                                         parameters: dict = None, batch_len: int = 1000,
-                                         write_urls_to: Union[str, Path] = None) -> List[str]:
+    def post_batch_jobs_and_get_job_urls(self, api: str, inputs: List[Any],
+                                         parameters: dict = None, batch_len: int = 1000) -> List[str]:
         """Triggers batch process on server and returns URLs to be used in GET requests for obtaining results.
 
         The returned URLs represent a batch each. There is a limit in batch size of 1000 which usually means we need
@@ -84,13 +85,6 @@ class BatchClient:
         help to further limit the size of batches. Several smaller batches may be processed quicker than a few large
         ones.
         """
-        if inputs is not None:
-            pass
-        elif inputs_file_path is not None:
-            inputs = self.read_list_from_json(file_path=inputs_file_path)
-        else:
-            raise ValueError('\'inputs\' abd \'inputs_file_path\' cannot be both None.')
-
         batch_len = max(min(batch_len, 1000), 2)  # limit of 1000 dictated by API
 
         batches = []
@@ -109,7 +103,8 @@ class BatchClient:
             }
             try:
                 response = requests.post(
-                    'https://api.geoapify.com/v1/batch?apiKey={}'.format(self._api_key), json=data, headers=HEADERS)
+                    'https://api.geoapify.com/v1/batch?apiKey={}'.format(self._api_key), json=data,
+                    headers=self._HEADERS)
             except requests.exceptions.RequestException as e:
                 raise SystemExit(e)
             if response.status_code not in (200, 202):
@@ -119,54 +114,41 @@ class BatchClient:
             result_urls.append(url)
             time.sleep(0.1)
 
-        if write_urls_to is not None:
-            header = f'Endpoint=TODO, Datetime={datetime.now()}'
-            self.write_list_to_json(data=result_urls, file_path=write_urls_to, attribute_name='urls', meta_data=header)
-
         return result_urls
 
-    def monitor_batch_jobs_and_get_results(self, result_urls: List[str] = None,
-                                           result_urls_file_path: Union[str, Path] = None) -> List[dict]:
+    def monitor_batch_jobs_and_get_results(self, sleep_time: int, result_urls: List[str]) -> List[dict]:
         """Monitors completion of each batch processing job and returns/stores results.
 
         Previous POST requests started batch processing jobs on geopify.com servers. Here we monitor the status and
         return/store results when all jobs succeeded.
-
-        TODO: https://superfastpython.com/threadpoolexecutor-progress/
         """
-        sleep_time = 5  # TODO make this dynamic and dependent on batch size
-        if result_urls is not None:
-            pass
-        elif result_urls_file_path is not None:
-            result_urls = self.read_list_from_json(file_path=result_urls_file_path, attribute_name='urls')
-        else:
-            raise ValueError('\'result_urls\' and \'result_urls_path\' cannot be both None.')
+        self._total_number_jobs = len(result_urls)
+
+        with ThreadPoolExecutor(min(10, len(result_urls))) as executor:
+            results = executor.map(lambda x: self._task(url=x, sleep_time=sleep_time), result_urls)
 
         result_responses = []
-        for url in result_urls:
-            while True:
-                response = requests.get(url, headers=HEADERS).json()
-                print(response)
-                try:
-                    _ = response['results']
-                    break
-                except KeyError:
-                    time.sleep(sleep_time)
-            result_responses += response['results']
+        for result in results:
+            result_responses += result
+
         return result_responses
 
-    @staticmethod
-    def write_list_to_json(data: List[Any], file_path: Union[str, Path], attribute_name: str = 'data',
-                           meta_data: Any = None) -> None:
-        data = {
-            'meta_data': meta_data,
-            attribute_name: data
-        }
-        with open(Path(file_path), 'w') as f:
-            json.dump(data, fp=f, indent=4)
+    def _task(self, url: str, sleep_time: int) -> List[dict]:
+        job_id = url.split('&apiKey')[0]
+        while True:
+            response = requests.get(url, headers=self._HEADERS).json()
+            try:
+                _ = response['results']
+                with self._lock:
+                    self._number_completed_jobs += 1
+                    self._logger.info(
+                        f'Job {job_id} done - {self._number_completed_jobs}/{self._total_number_jobs} completed.')
+                break
+            except KeyError:
+                self._logger.info(f'Job {job_id} still pending - waiting another {sleep_time} seconds.')
+                time.sleep(sleep_time)
+        return response['results']
 
     @staticmethod
-    def read_list_from_json(file_path: Union[str, Path], attribute_name: str = 'data') -> List[Any]:
-        with open(Path(file_path), 'r') as f:
-            data = json.load(fp=f)
-        return data[attribute_name]
+    def _get_sleep_time(batch_len: int) -> int:
+        return max(3, int(batch_len ** 0.75))

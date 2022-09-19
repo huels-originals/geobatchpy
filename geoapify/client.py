@@ -1,10 +1,10 @@
 import logging
-from typing import Dict, List, Tuple
 import warnings
+from typing import Dict, List, Tuple
 
 import requests
 
-from geoapify._batch import BatchClient
+from geoapify.batch import BatchClient
 
 HEADERS = {'Accept': 'application/json', 'Content-Type': 'application/json'}
 

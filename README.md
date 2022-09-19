@@ -17,7 +17,9 @@ How to install the current development state from the master branch:
 pip install git+https://github.com/kinsvater/geoapify.git
 ```
 
-## Batch geocoding example
+## Examples
+
+### Batch geocoding example
 
 ```python
 from geoapify import Client
@@ -28,7 +30,7 @@ addresses = ['Hülser Markt 1, 47839 Krefeld',
              'DB Schenker, Essen, Germany',
              'JCI Beteiligungs GmbH, Am Schimmersfeld 5, Ratingen']
 
-res = client.batch_geocode(addresses=addresses)
+res = client.batch.geocode(addresses=addresses, simplify_output=True)
 
 # Showcase the first of three result sets:
 res[0]
@@ -80,7 +82,9 @@ res[0]
 }
 ```
 
-## Place Details example
+### Place Details example
+
+There is also a batch version of the Place Details API. Below we use the single location version:
 
 ```python
 from geoapify import Client
@@ -296,4 +300,4 @@ res['features']
 ## References and further reading
 
 - [geoapify.com API documentation](https://apidocs.geoapify.com/)
-- [medium.com - deduplicate and clean-up millions of location records](https://medium.com/@paul.kinsvater/deduplicate-and-clean-up-millions-of-location-records-abcffb308ebf)
+- [Towards Data Science - Deduplicate and clean-up millions of location records](https://towardsdatascience.com/deduplicate-and-clean-up-millions-of-location-records-abcffb308ebf)
