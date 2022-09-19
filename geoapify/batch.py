@@ -207,4 +207,4 @@ class BatchClient:
 
     @staticmethod
     def _get_sleep_time(number_of_items: int) -> int:
-        return max(3, min(300, int(number_of_items ** 0.4)))
+        return min(300, max(3, int(number_of_items ** 0.4)))
