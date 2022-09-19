@@ -19,32 +19,64 @@ HEADERS = {'Accept': 'application/json', 'Content-Type': 'application/json'}
 
 
 class BatchClient:
-    _url_batch_geocode = 'https://api.geoapify.com/v1/batch/geocode/search?apiKey={}'
-    _url_batch_reverse_geocode = 'https://api.geoapify.com/v1/batch/geocode/reverse?&apiKey={}'
 
     def __init__(self, api_key: str):
         self._api_key = api_key
         self._logger = logging.getLogger(__name__)
 
-    def geocode(self, addresses: List[str], batch_len: int = 1000, sleep_time: int = 5,
-                parameters: Dict[str, str] = None):
+    def geocode(self, addresses: List[str], batch_len: int = 1000, parameters: Dict[str, str] = None,
+                simplify_output: bool = False) -> List[dict]:
+        inputs = [{'params': {'text': val}} for val in addresses]
         result_urls = self.post_batch_jobs_and_get_job_urls(
-            request_url=self._url_batch_geocode.format(self._api_key), inputs=addresses, batch_len=batch_len,
-            parameters=parameters)
+            api='/v1/geocode/search', inputs=inputs, parameters=parameters, batch_len=batch_len)
 
-        return self.monitor_batch_jobs_and_get_results(result_urls=result_urls, sleep_time=sleep_time)
+        results = self.monitor_batch_jobs_and_get_results(result_urls=result_urls)
 
-    def reverse_geocode(self, geocodes: List[Tuple[float, float]], batch_len: int = 1000, sleep_time: int = 5,
-                        parameters: Dict[str, str] = None):
+        if simplify_output:
+            return [{**res['result']['results'][0], 'query': res['result']['query']} for res in results]
+        else:
+            return results
+
+    def reverse_geocode(self, geocodes: List[Tuple[float, float]], batch_len: int = 1000,
+                        parameters: Dict[str, str] = None, simplify_output: bool = False) -> List[dict]:
+        inputs = [{'params': {'lat': val[1], 'lon': val[0]}} for val in geocodes]
         result_urls = self.post_batch_jobs_and_get_job_urls(
-            request_url=self._url_batch_reverse_geocode.format(self._api_key), inputs=geocodes, batch_len=batch_len,
-            parameters=parameters)
+            api='/v1/geocode/reverse', inputs=inputs, parameters=parameters, batch_len=batch_len)
 
-        return self.monitor_batch_jobs_and_get_results(result_urls=result_urls, sleep_time=sleep_time)
+        results = self.monitor_batch_jobs_and_get_results(result_urls=result_urls)
 
-    def post_batch_jobs_and_get_job_urls(
-            self, request_url: str, inputs: List[Any] = None, inputs_file_path: Union[str, Path] = None,
-            parameters: dict = None, batch_len: int = 1000, write_urls_to: Union[str, Path] = None) -> List[str]:
+        if simplify_output:
+            return [res['result']['results'][0] for res in results]
+        else:
+            return results
+
+    def place_details(self, place_ids: List[str] = None, geocodes: List[Tuple[float, float]] = None,
+                      batch_len: int = 1000, parameters: Dict[str, str] = None,
+                      features: List[str] = None, language: str = None) -> List[dict]:
+        if place_ids is not None:
+            inputs = [{'params': {'id': val}} for val in place_ids]
+        elif geocodes is not None:
+            inputs = [{'params': {'lat': val[1], 'lon': val[0]}} for val in geocodes]
+        else:
+            raise ValueError('Either place_ids or geocodes must be provided.')
+
+        params = dict()
+        if features is not None:
+            params['features'] = ','.join(features)
+        if language is not None:
+            params['lang'] = language
+
+        result_urls = self.post_batch_jobs_and_get_job_urls(
+            api='/v2/place-details', inputs=inputs, parameters=params, batch_len=batch_len)
+
+        results = self.monitor_batch_jobs_and_get_results(result_urls=result_urls)
+
+        return results
+
+    def post_batch_jobs_and_get_job_urls(self, api: str, inputs: List[Any] = None,
+                                         inputs_file_path: Union[str, Path] = None,
+                                         parameters: dict = None, batch_len: int = 1000,
+                                         write_urls_to: Union[str, Path] = None) -> List[str]:
         """Triggers batch process on server and returns URLs to be used in GET requests for obtaining results.
 
         The returned URLs represent a batch each. There is a limit in batch size of 1000 which usually means we need
@@ -67,8 +99,17 @@ class BatchClient:
 
         result_urls = []
         for i, batch in enumerate(batches):
+            params = {'format': 'json'}
+            if parameters is not None:
+                params = {**params, **parameters}
+            data = {
+                'api': api,
+                'params': params,
+                'inputs': batch
+            }
             try:
-                response = requests.post(request_url, json=batch, headers=HEADERS, params=parameters)
+                response = requests.post(
+                    'https://api.geoapify.com/v1/batch?apiKey={}'.format(self._api_key), json=data, headers=HEADERS)
             except requests.exceptions.RequestException as e:
                 raise SystemExit(e)
             if response.status_code not in (200, 202):
@@ -79,19 +120,21 @@ class BatchClient:
             time.sleep(0.1)
 
         if write_urls_to is not None:
-            header = f'Endpoint={request_url}, Datetime={datetime.now()}'
+            header = f'Endpoint=TODO, Datetime={datetime.now()}'
             self.write_list_to_json(data=result_urls, file_path=write_urls_to, attribute_name='urls', meta_data=header)
 
         return result_urls
 
     def monitor_batch_jobs_and_get_results(self, result_urls: List[str] = None,
-                                           result_urls_file_path: Union[str, Path] = None,
-                                           sleep_time: int = 5) -> List[dict]:
+                                           result_urls_file_path: Union[str, Path] = None) -> List[dict]:
         """Monitors completion of each batch processing job and returns/stores results.
 
         Previous POST requests started batch processing jobs on geopify.com servers. Here we monitor the status and
         return/store results when all jobs succeeded.
+
+        TODO: https://superfastpython.com/threadpoolexecutor-progress/
         """
+        sleep_time = 5  # TODO make this dynamic and dependent on batch size
         if result_urls is not None:
             pass
         elif result_urls_file_path is not None:
@@ -103,12 +146,13 @@ class BatchClient:
         for url in result_urls:
             while True:
                 response = requests.get(url, headers=HEADERS).json()
+                print(response)
                 try:
-                    _ = response[0]['query']
+                    _ = response['results']
                     break
                 except KeyError:
-                    time.sleep(max(sleep_time, 2))
-            result_responses += response
+                    time.sleep(sleep_time)
+            result_responses += response['results']
         return result_responses
 
     @staticmethod

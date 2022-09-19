@@ -80,7 +80,7 @@ class Client:
 
         return requests.get(url=request_url, params=params, headers=HEADERS).json()
 
-    def batch_geocode(self, addresses: List[str], batch_len: int = 1000, sleep_time: int = 5,
+    def batch_geocode(self, addresses: List[str], batch_len: int = 1000,
                       parameters: Dict[str, str] = None) -> List[dict]:
         """Returns batch geocoding results as a list of dictionaries.
 
@@ -88,15 +88,15 @@ class Client:
         batches, and the level of your geoapify.com subscription.
 
         :param addresses: search queries as list of strings; one address = one string.
-        :param sleep_time: sleep time in seconds between every request for results of batch processing.
         :param batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
         :param parameters: optional parameters as key value paris. See the geoapify.com API documentation.
         :return: list of structured, geocoded, and enriched address records.
         """
         warnings.warn('Method Client.batch_geocode is deprecated - use Client.batch.geocode instead.')
-        return self.batch.geocode(addresses=addresses, batch_len=batch_len, parameters=parameters)
+        return self.batch.geocode(addresses=addresses, batch_len=batch_len, parameters=parameters,
+                                  simplify_output=True)
 
-    def batch_reverse_geocode(self, geocodes: List[Tuple[float, float]], batch_len: int = 1000, sleep_time: int = 5,
+    def batch_reverse_geocode(self, geocodes: List[Tuple[float, float]], batch_len: int = 1000,
                               parameters: Dict[str, str] = None) -> List[dict]:
         """Returns batch reverse geocoding results as a list of dictionaries.
 
@@ -105,10 +105,9 @@ class Client:
 
         :param geocodes: list of longitude, latitude tuples.
         :param batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
-        :param sleep_time: sleep time in seconds between every request for results of batch processing.
         :param parameters: optional parameters as dictionary. See the geoapify.com API documentation.
         :return: list of structured, reverse geocoded, and enriched address records.
         """
         warnings.warn('Method Client.batch_reverse_geocode is deprecated - use Client.batch.reverse_geocode instead.')
-        return self.batch.reverse_geocode(geocodes=geocodes, batch_len=batch_len, sleep_time=sleep_time,
-                                          parameters=parameters)
+        return self.batch.reverse_geocode(geocodes=geocodes, batch_len=batch_len, parameters=parameters,
+                                          simplify_output=True)
