@@ -30,7 +30,7 @@ addresses = ['Hülser Markt 1, 47839 Krefeld',
              'DB Schenker, Essen, Germany',
              'JCI Beteiligungs GmbH, Am Schimmersfeld 5, Ratingen']
 
-res = client.batch.geocode(addresses=addresses, simplify_output=True)
+res = client.batch.geocode(locations=addresses, simplify_output=True)
 
 # Showcase the first of three result sets:
 res[0]
@@ -296,6 +296,36 @@ res['features']
     },
 ]
 ```
+
+### Using the geoapify CLI
+
+This packages comes with the `geoapify` command line interface. It is useful for executing batch jobs as a demon or
+with little overhead in a terminal.
+
+Before we start, we need to first create a JSON file to store all the inputs. See the
+`geoapify.batch.BatchClient.parse_*` methods to bring your inputs into the right format and check the docstrings of
+the CLI:
+
+```shell
+geoapify post_batch_jobs --help
+```
+
+Assuming, we have created such data for input, we can post batch processing jobs by
+
+```shell
+geoapify post_batch_jobs <path-data-in> <path-post-data-out> --api-key <your-key>
+```
+
+You can ommit the `--api-key` option if you set instead your `GEOAPIFY_KEY` environment variable. 
+
+Afterwards, execute any time, immediately or hours later:
+
+```shell
+geoapify monitor_batch_jobs <path-post-data-out> <path-results-data-out> --api-key <your-key>
+```
+
+This will monitor the progress of all batch jobs and store results to disk when they all finish. You can abort
+this step any time and restart later - provided they still are cached by the Geoapify servers.
 
 ## References and further reading
 
