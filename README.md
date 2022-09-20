@@ -307,13 +307,13 @@ Before we start, we need to first create a JSON file to store all the inputs. Se
 the CLI:
 
 ```shell
-geoapify post_batch_jobs --help
+geoapify post-batch-jobs --help
 ```
 
 Assuming, we have created such data for input, we can post batch processing jobs by
 
 ```shell
-geoapify post_batch_jobs <path-data-in> <path-post-data-out> --api-key <your-key>
+geoapify post-batch-jobs <path-data-in> <path-post-data-out> --api-key <your-key>
 ```
 
 You can ommit the `--api-key` option if you set instead your `GEOAPIFY_KEY` environment variable. 
@@ -321,7 +321,7 @@ You can ommit the `--api-key` option if you set instead your `GEOAPIFY_KEY` envi
 Afterwards, execute any time, immediately or hours later:
 
 ```shell
-geoapify monitor_batch_jobs <path-post-data-out> <path-results-data-out> --api-key <your-key>
+geoapify monitor-batch-jobs <path-post-data-out> <path-results-data-out> --api-key <your-key>
 ```
 
 This will monitor the progress of all batch jobs and store results to disk when they all finish. You can abort
