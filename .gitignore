@@ -16,3 +16,5 @@ dist/
 .conda*/
 docs/_rst/*
 docs/_build/*
+
+tests/test_integrate_with_api_key.py
