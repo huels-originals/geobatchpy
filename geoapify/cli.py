@@ -46,6 +46,7 @@ def main():
 def post_batch_jobs(path_data_in, path_data_out, api_key):
     """Read input data, post batch jobs, and write result urls to disk.
 
+    \b
     Specifications of file `path_data_in` - JSON dictionary with the following attributes:
     Mandatory:
     - api: string, the name of the Geoapify API. E.g., '/v1/geocode/search'.
@@ -55,6 +56,7 @@ def post_batch_jobs(path_data_in, path_data_out, api_key):
     - batch_len: int, maximal size of a single batch. Data will be distributed across multiple jobs if needed.
     - id: str, any name for reference. This will be stored as the data_input_id in the outputs.
 
+    \b
     :param path_data_in: path to the JSON file read as input.
     :param path_data_out: destination of the JSON output file.
     :param api_key: if not set, will be read from the GEOAPIFY_KEY environment variable.
@@ -82,6 +84,7 @@ def post_batch_jobs(path_data_in, path_data_out, api_key):
 def monitor_batch_jobs(path_data_in, path_data_out, api_key):
     """Read result urls from input data, monitor batch jobs, and write results to disk.
 
+    \b
     Specifications of file `path_data_in` - JSON dictionary with the following attributes:
     Mandatory:
     - result_urls: list of URLs referencing the batch jobs running on the Geoapify servers.
@@ -89,6 +92,7 @@ def monitor_batch_jobs(path_data_in, path_data_out, api_key):
     Optional:
     - id: str, any name for reference. This will be stored as the data_input_id in the outputs.
 
+    \b
     :param path_data_in: path to the JSON file read as input.
     :param path_data_out: destination of the JSON output file.
     :param api_key: if not set, will be read from the GEOAPIFY_KEY environment variable.
