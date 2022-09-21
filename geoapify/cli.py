@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import click
 
-from geoapify import Client
+from geoapify import Client, __version__
 from geoapify.batch import read_data_from_json_file, write_data_to_json_file
 
 logging.basicConfig(
@@ -33,13 +33,17 @@ def main():
     """
     CLI for the Geoapify REST API.
 
-    Set your GEOAPIFY_KEY environment variable or provide the key using the --api-key option.
-
-    \b
-    geoapify post_batch_jobs <path-data-in> <path-data-out> [-k <api-key>]  -> Post batch jobs and store result urls.
-    geoapify monitor_batch_jobs <path-data-in> <path-data-out> [-k <api-key>]  -> Monitor jobs and store results.
+    Set your GEOAPIFY_KEY environment variable or provide the API key using the --api-key option.
     """
     pass
+
+
+@main.command()
+def version():
+    """Print package version.
+
+    """
+    click.echo('Version: ' + __version__)
 
 
 @main.command()
@@ -47,7 +51,11 @@ def main():
 @click.argument('path_data_out', type=click.Path())
 @click.option('-k', '--api-key', default=None)
 def post_batch_jobs(path_data_in, path_data_out, api_key):
-    """Read input data, post batch jobs, and write result urls to disk.
+    """Post batch jobs and store result urls.
+
+    \b
+    Usage examples:
+    geoapify post_batch_jobs <path-data-in> <path-data-out> [-k <api-key>]
 
     \b
     Specifications of file `path_data_in` - JSON dictionary with the following attributes:
@@ -85,7 +93,11 @@ def post_batch_jobs(path_data_in, path_data_out, api_key):
 @click.argument('path_data_out', type=click.Path())
 @click.option('-k', '--api-key', default=None)
 def monitor_batch_jobs(path_data_in, path_data_out, api_key):
-    """Read result urls from input data, monitor batch jobs, and write results to disk.
+    """Monitor jobs and store results.
+
+    \b
+    Usage example:
+    geoapify monitor_batch_jobs <path-data-in> <path-data-out> [-k <api-key>]
 
     \b
     Specifications of file `path_data_in` - JSON dictionary with the following attributes:
