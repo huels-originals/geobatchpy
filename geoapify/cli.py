@@ -8,7 +8,10 @@ import click
 from geoapify import Client
 from geoapify.batch import read_data_from_json_file, write_data_to_json_file
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(
+    level=logging.INFO, datefmt='%H:%M:%S',
+    format='%(asctime)s-%(levelname)s-%(name)s::%(module)s|%(lineno)s:: %(message)s'
+)
 
 CONTEXT_SETTINGS = {
     'help_option_names': ['-h', '--help']
@@ -51,8 +54,8 @@ def post_batch_jobs(path_data_in, path_data_out, api_key):
     Mandatory:
     - api: string, the name of the Geoapify API. E.g., '/v1/geocode/search'.
     - inputs: list of locations in any of the supported formats. See geoapify.batch.BatchClient.
-    - params: dict of optional parameters valid for all locations. See the Geoapify API docs.
     Optional:
+    - params: dict of optional parameters valid for all locations. See the Geoapify API docs.
     - batch_len: int, maximal size of a single batch. Data will be distributed across multiple jobs if needed.
     - id: str, any name for reference. This will be stored as the data_input_id in the outputs.
 
@@ -64,7 +67,7 @@ def post_batch_jobs(path_data_in, path_data_out, api_key):
     data_in = read_data_from_json_file(file_path=path_data_in)
     client = Client(api_key=get_api_key(api_key=api_key))
     result_urls = client.batch.post_batch_jobs_and_get_job_urls(
-        api=data_in['api'], inputs=data_in['inputs'], parameters=data_in['params'], batch_len=data_in.get('batch_len'))
+        api=data_in['api'], inputs=data_in['inputs'], parameters=data_in.get('params'), batch_len=data_in.get('batch_len'))
 
     data_out = {
         'id': str(uuid4()),

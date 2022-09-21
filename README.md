@@ -303,11 +303,29 @@ This packages comes with the `geoapify` command line interface. It is useful for
 with little overhead in a terminal.
 
 Before we start, we need to first create a JSON file to store all the inputs. See the
-`geoapify.batch.BatchClient.parse_*` methods to bring your inputs into the right format and check the docstrings of
+`geoapify.batch.parse_*` functions to bring your inputs into the right format and check the docstrings of
 the CLI:
 
 ```shell
 geoapify post-batch-jobs --help
+```
+
+See the following example reusing the data from the batch geocoding example:
+
+```python
+from geoapify.batch import parse_geocoding_inputs, write_data_to_json_file
+
+addresses = ['Hülser Markt 1, 47839 Krefeld',
+             'DB Schenker, Essen, Germany',
+             'JCI Beteiligungs GmbH, Am Schimmersfeld 5, Ratingen']
+
+data = {
+    'api': '/v1/geocode/search',
+    'inputs': parse_geocoding_inputs(locations=addresses),
+    'id': 'my-batch-geocoding-job'
+}
+
+write_data_to_json_file(data=data, file_path='<path-data-in>')
 ```
 
 Assuming, we have created such data for input, we can post batch processing jobs by

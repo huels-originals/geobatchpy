@@ -46,7 +46,7 @@ class BatchClient:
         :param simplify_output: if True, the output will be provided in a slightly simplified format.
         :return: list of structured, geocoded, and enriched address records.
         """
-        inputs = self.parse_geocoding_inputs(locations=locations)
+        inputs = parse_geocoding_inputs(locations=locations)
         result_urls = self.post_batch_jobs_and_get_job_urls(
             api=self.API_GEOCODE, inputs=inputs, parameters=parameters, batch_len=batch_len)
 
@@ -57,26 +57,6 @@ class BatchClient:
             return [{**res['result']['results'][0], 'query': res['result']['query']} for res in results]
         else:
             return results
-
-    @staticmethod
-    def parse_geocoding_inputs(locations: List[Union[str, dict]]) -> List[dict]:
-        """Validate and parse the input for the batch geocoding API.
-
-        Supported formats:
-        - List of free text search strings.
-        - List of dictionaries with structured location definition. See the Geoapify API docs for forward geocoding.
-
-        :param locations: original input.
-        :return: parsed locations.
-        """
-        if all(isinstance(val, str) for val in locations):
-            # Then this is a list of free text search strings:
-            return [{'params': {'text': val}} for val in locations]
-        elif all(isinstance(val, dict) for val in locations):
-            # Then it must be a structured input - see the Geoapify API docs.
-            return [{'params': dictionary} for dictionary in locations]
-        else:
-            raise ValueError('Format of \'locations\' not supported.')
 
     def reverse_geocode(self, geocodes: List[Union[Tuple[float, float], Dict[str, float]]], batch_len: int = 1000,
                         parameters: Dict[str, str] = None, simplify_output: bool = False) -> List[dict]:
@@ -92,7 +72,7 @@ class BatchClient:
         :param simplify_output: if True, the output will be provided in a slightly simplified format.
         :return: list of structured, reverse geocoded, and enriched address records.
         """
-        inputs = self.parse_geocodes(geocodes=geocodes)
+        inputs = parse_geocodes(geocodes=geocodes)
         result_urls = self.post_batch_jobs_and_get_job_urls(
             api=self.API_REVERSE_GEOCODE, inputs=inputs, parameters=parameters, batch_len=batch_len)
 
@@ -127,7 +107,7 @@ class BatchClient:
         if place_ids is not None:
             inputs = [{'params': {'id': val}} for val in place_ids]
         elif geocodes is not None:
-            inputs = self.parse_geocodes(geocodes=geocodes)
+            inputs = parse_geocodes(geocodes=geocodes)
         else:
             raise ValueError('Either place_ids or geocodes must be provided.')
 
@@ -144,25 +124,6 @@ class BatchClient:
         results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
 
         return results
-
-    @staticmethod
-    def parse_geocodes(geocodes: List[Union[Tuple[float, float], Dict[str, float]]]) -> List[dict]:
-        """Validate and parse lists of geocoordinates.
-
-        Supported formats:
-        - List of (longitude, latitude) tuples as floats.
-        - List of dictionaries, with each containing attributes 'lon' and 'lat'.
-
-        :param geocodes: original input.
-        :return: parsed geocodes.
-        """
-        if all(len(val) == 2 and isinstance(val[0], float) and isinstance(val[1], float) for val in geocodes):
-            # Interpreted as (longitude, latitude) tuples:
-            return [{'params': {'lon': val[0], 'lat': val[1]}} for val in geocodes]
-        elif all(isinstance(val, dict) for val in geocodes):
-            return [{'params': val} for val in geocodes]
-        else:
-            raise ValueError('Format of \'geocodes\' not supported.')
 
     def post_batch_jobs_and_get_job_urls(self, api: str, inputs: List[Any],
                                          parameters: dict = None, batch_len: int = None) -> List[str]:
@@ -252,13 +213,56 @@ class BatchClient:
                         f'Job {job_id} done - {self._number_completed_jobs}/{self._total_number_jobs} completed.')
                 break
             except KeyError:
-                self._logger.info(f'Job {job_id} still pending - waiting another {sleep_time} seconds.')
+                if response['status'] == 'pending':
+                    self._logger.info(f'Job {job_id} still pending - waiting another {sleep_time} seconds.')
+                else:
+                    self._logger.warning(
+                        f'Unexpected response from server: {response} - waiting another {sleep_time} seconds.')
                 time.sleep(sleep_time)
         return response['results']
 
     @staticmethod
     def get_sleep_time(number_of_items: int) -> int:
         return min(300, max(3, int(number_of_items ** 0.4)))
+
+
+def parse_geocoding_inputs(locations: List[Union[str, dict]]) -> List[dict]:
+    """Validate and parse the input for the batch geocoding API.
+
+    Supported formats:
+    - List of free text search strings.
+    - List of dictionaries with structured location definition. See the Geoapify API docs for forward geocoding.
+
+    :param locations: original input.
+    :return: parsed locations.
+    """
+    if all(isinstance(val, str) for val in locations):
+        # Then this is a list of free text search strings:
+        return [{'params': {'text': val}} for val in locations]
+    elif all(isinstance(val, dict) for val in locations):
+        # Then it must be a structured input - see the Geoapify API docs.
+        return [{'params': dictionary} for dictionary in locations]
+    else:
+        raise ValueError('Format of \'locations\' not supported.')
+
+
+def parse_geocodes(geocodes: List[Union[Tuple[float, float], Dict[str, float]]]) -> List[dict]:
+    """Validate and parse lists of geocoordinates.
+
+    Supported formats:
+    - List of (longitude, latitude) tuples as floats.
+    - List of dictionaries, with each containing attributes 'lon' and 'lat'.
+
+    :param geocodes: original input.
+    :return: parsed geocodes.
+    """
+    if all(len(val) == 2 and isinstance(val[0], float) and isinstance(val[1], float) for val in geocodes):
+        # Interpreted as (longitude, latitude) tuples:
+        return [{'params': {'lon': val[0], 'lat': val[1]}} for val in geocodes]
+    elif all(isinstance(val, dict) for val in geocodes):
+        return [{'params': val} for val in geocodes]
+    else:
+        raise ValueError('Format of \'geocodes\' not supported.')
 
 
 def read_data_from_json_file(file_path: Union[str, Path]) -> Json:
