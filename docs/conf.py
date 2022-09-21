@@ -33,6 +33,7 @@ release = '0.1'
 extensions = [
     'sphinx.ext.autodoc',
     'myst_parser',
+    'sphinx_click',
 ]
 
 language = "en"

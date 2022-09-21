@@ -54,14 +54,14 @@ def post_batch_jobs(path_data_in, path_data_out, api_key):
     """Post batch jobs and store result urls.
 
     \b
-    Usage examples:
-    geoapify post_batch_jobs <path-data-in> <path-data-out> [-k <api-key>]
+    Specifications of file `path_data_in` - JSON dictionary with the following attributes.
 
     \b
-    Specifications of file `path_data_in` - JSON dictionary with the following attributes:
     Mandatory:
     - api: string, the name of the Geoapify API. E.g., '/v1/geocode/search'.
     - inputs: list of locations in any of the supported formats. See geoapify.batch.BatchClient.
+
+    \b
     Optional:
     - params: dict of optional parameters valid for all locations. See the Geoapify API docs.
     - batch_len: int, maximal size of a single batch. Data will be distributed across multiple jobs if needed.
@@ -96,14 +96,14 @@ def monitor_batch_jobs(path_data_in, path_data_out, api_key):
     """Monitor jobs and store results.
 
     \b
-    Usage example:
-    geoapify monitor_batch_jobs <path-data-in> <path-data-out> [-k <api-key>]
+    Specifications of file `path_data_in` - JSON dictionary with the following attributes.
 
     \b
-    Specifications of file `path_data_in` - JSON dictionary with the following attributes:
     Mandatory:
     - result_urls: list of URLs referencing the batch jobs running on the Geoapify servers.
     - sleep_time: int, sleep time in seconds between every GET call of a single job to check the status.
+
+    \b
     Optional:
     - id: str, any name for reference. This will be stored as the data_input_id in the outputs.
 

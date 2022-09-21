@@ -371,6 +371,19 @@ lint = ["flake8 (>=3.5.0)", "flake8-comprehensions", "flake8-bugbear", "isort", 
 test = ["pytest (>=4.6)", "html5lib", "cython", "typed-ast"]
 
 [[package]]
+name = "sphinx-click"
+version = "4.3.0"
+description = "Sphinx extension that automatically documents click applications"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+click = ">=7.0"
+docutils = "*"
+sphinx = ">=2.0"
+
+[[package]]
 name = "sphinxcontrib-applehelp"
 version = "1.0.2"
 description = "sphinxcontrib-applehelp is a sphinx extension which outputs Apple help books"
@@ -485,7 +498,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<4.0"
-content-hash = "ae9a34631db100a1e08e5fb0cc6a2dc61b490c1f761777048c0747fe79edc85a"
+content-hash = "c493e5dec069b3784e0ad94d9b47a66ebb675c0730dda7dd55e0625265bb1f32"
 
 [metadata.files]
 alabaster = []
@@ -573,6 +586,7 @@ pyyaml = [
 requests = []
 snowballstemmer = []
 sphinx = []
+sphinx-click = []
 sphinxcontrib-applehelp = []
 sphinxcontrib-devhelp = []
 sphinxcontrib-htmlhelp = []

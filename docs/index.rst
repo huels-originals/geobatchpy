@@ -25,13 +25,15 @@ endpoint you need. If not, contribute a pull request.
    :caption: API
 
    ref-client
+   ref-batch
+   ref-cli
 
 
 .. toctree::
    :maxdepth: 2
    :caption: Miscellaneous
 
-   external-inspire
+   references
 
 
 
