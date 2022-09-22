@@ -104,7 +104,7 @@ class TestClient:
         addresses = ['Hülser Markt 1, 47839 Krefeld', 'DB Schenker, Essen, Germany',
                      'JCI Beteiligungs GmbH, Am Schimmersfeld 5, Ratingen']
 
-        res = client.batch.geocode(addresses=addresses, batch_len=2, parameters={'lang': 'fr'}, simplify_output=True)
+        res = client.batch.geocode(locations=addresses, batch_len=2, parameters={'lang': 'fr'}, simplify_output=True)
 
         assert len(res) == len(addresses)
         assert res[0]['housenumber'] == '1'

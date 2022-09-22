@@ -5,13 +5,13 @@ endpoints, and else in the near future.
 
 ## How to install
 
-Install the latest release from public pypi:
+Install the latest release from public PyPI by
 
 ```shell
 pip install geoapify
 ```
 
-How to install the current development state from the master branch:
+or directly from the current master branch if you need to try any features not yet published:
 
 ```shell
 pip install git+https://github.com/kinsvater/geoapify.git
@@ -30,7 +30,7 @@ addresses = ['Hülser Markt 1, 47839 Krefeld',
              'DB Schenker, Essen, Germany',
              'JCI Beteiligungs GmbH, Am Schimmersfeld 5, Ratingen']
 
-res = client.batch.geocode(addresses=addresses, simplify_output=True)
+res = client.batch.geocode(locations=addresses, simplify_output=True)
 
 # Showcase the first of three result sets:
 res[0]
@@ -82,9 +82,60 @@ res[0]
 }
 ```
 
+### Use the geoapify CLI to post and monitor large jobs
+
+This packages comes with the `geoapify` command line interface. It is useful for executing batch jobs as a daemon or
+with little overhead in a terminal.
+
+Before we start, we need to first create a JSON file to store all the inputs. See the
+`geoapify.batch.parse_*` functions to bring your inputs into the right format and check the docstrings of
+the CLI:
+
+```shell
+geoapify post-batch-jobs --help
+```
+
+See the following example how to generate a JSON input file for the batch geocoding service using Python:
+
+```python
+from geoapify.batch import parse_geocoding_inputs, write_data_to_json_file
+
+addresses = ['Hülser Markt 1, 47839 Krefeld',
+             'DB Schenker, Essen, Germany',
+             'JCI Beteiligungs GmbH, Am Schimmersfeld 5, Ratingen']
+
+data = {
+    'api': '/v1/geocode/search',  # see the Geoapify API docs for other APIs that work with batch processing
+    'inputs': parse_geocoding_inputs(locations=addresses),
+    'batch_len': 2,  # optional - will put first two addresses in batch 1, last address in batch 2
+    'id': 'my-batch-geocoding-job'  # optional - a reference which will be reused in the output file
+}
+
+write_data_to_json_file(data=data, file_path='<path-data-in>')  # use as input for post-batch-jobs
+```
+
+Assuming, we have created such data for input, we can post batch processing jobs by
+
+```shell
+geoapify post-batch-jobs <path-data-in> <path-post-data-out> --api-key <your-key>
+```
+
+You can omit the `--api-key` option if you set your `GEOAPIFY_KEY` environment variable. 
+
+The `post-batch-jobs` should finish rather quickly. Next we can start monitoring progress now or anytime later:
+
+```shell
+geoapify monitor-batch-jobs <path-post-data-out> <path-results-data-out> --api-key <your-key>
+```
+
+This will monitor the progress of all batch jobs and store results to disk when they all finish. You can abort
+this step any time and restart later - provided the jobs still are in cache of the Geoapify servers.
+
 ### Place Details example
 
-There is also a batch version of the Place Details API. Below we use the single location version:
+There is also a batch version of the Place Details API. Below we use the single location version and choose
+two different kinds of features in our request. There are many more kinds of features - see the Geoapify docs. But
+note that not every location is covered by every kind of feature.
 
 ```python
 from geoapify import Client
@@ -206,89 +257,14 @@ res['features']
                     [7.0093446, 51.450494299],
                     [7.0093605, 51.450446299],
                     [7.0093658, 51.450437399],
-                    [7.0093761, 51.450428999],
-                    [7.0095574, 51.450353899],
-                    [7.0095676, 51.450343499],
-                    [7.0095713, 51.450329499],
-                    [7.0095657, 51.450316699],
-                    [7.0094784, 51.450233899],
-                    [7.009469, 51.450223599],
-                    [7.0094693, 51.450208399],
-                    [7.0094934, 51.450152899],
-                    [7.0095066, 51.450144399],
-                    [7.0095188, 51.450140599],
-                    [7.009538, 51.450139899],
-                    [7.0096207, 51.450152399],
-                    [7.0096342, 51.450155499],
-                    [7.0096446, 51.450160499],
-                    [7.0097354, 51.450252499],
-                    [7.0097538, 51.450258699],
-                    [7.0097791, 51.450262199],
-                    [7.0097974, 51.450260099],
-                    [7.009934, 51.450205199],
-                    [7.0099476, 51.450199899],
-                    [7.0099658, 51.450199599],
-                    [7.0102431, 51.450236799],
-                    [7.0102591, 51.450242899],
-                    [7.0102675, 51.450250599],
-                    [7.0103502, 51.450335299],
-                    [7.0103674, 51.450342999],
-                    [7.010387, 51.450345099],
-                    [7.0104061, 51.450342399],
-                    [7.0105427, 51.450285099],
-                    [7.0105585, 51.450282099],
-                    [7.0105745, 51.450280899],
-                    [7.0106665, 51.450297199],
-                    [7.0106825, 51.450307299],
-                    [7.0106896, 51.450320699],
-                    [7.0106672, 51.450379899],
-                    [7.0106593, 51.450388399],
-                    [7.0106433, 51.450396199],
-                    [7.0105056, 51.450454799],
-                    [7.0104961, 51.450466299],
-                    [7.0104974, 51.450477999],
-                    [7.0105786, 51.450558999],
-                    [7.01058, 51.450567899],
-                    [7.0105547, 51.450632199],
-                    [7.0105382, 51.450638799],
-                    [7.0105184, 51.450642299],
-                    [7.0104835, 51.450638599],
-                    [7.0104218, 51.450629599],
-                    [7.0104059, 51.450623199],
-                    [7.01035, 51.450572399],
-                    [7.0103366, 51.450565699],
-                    [7.0102999, 51.450561999],
-                    [7.0102799, 51.450563599],
-                    [7.0101656, 51.450609599],
-                    [7.0101464, 51.450611899],
-                    [7.0098273, 51.450568299],
-                    [7.0098169, 51.450564099],
-                    [7.0097179, 51.450468499],
-                    [7.0096988, 51.450461899],
-                    [7.0096821, 51.450460399],
-                    [7.0096676, 51.450460999],
-                    [7.0094924, 51.450531399],
-                    [7.0094836, 51.450533799],
-                    [7.0094722, 51.450535899],
-                    [7.0094542, 51.450535099],
-                    [7.0093683, 51.450522199],
-                    [7.0093569, 51.450517799],
-                    [7.0093494, 51.450508999],
+                    # many more coordinates
                     [7.0093446, 51.450494299],
                 ],
                 [
                     [7.0098872, 51.450365899],
                     [7.0098989, 51.450384999],
                     [7.0099838, 51.450464199],
-                    [7.0100102, 51.450469499],
-                    [7.0100366, 51.450469499],
-                    [7.0101765, 51.450410899],
-                    [7.0101851, 51.450394999],
-                    [7.0101807, 51.450379299],
-                    [7.0100945, 51.450291999],
-                    [7.0100665, 51.450285699],
-                    [7.0100355, 51.450287599],
-                    [7.0098966, 51.450346399],
+                    # many more coordinates
                     [7.0098872, 51.450365899],
                 ],
             ],

@@ -5,17 +5,24 @@ records and ask to process each component. Processing is component-wise independ
 instead requesting for each component separately. Geoapify is able to distribute processing on its servers. You can
 use GET requests to ask if a job is completed. If it is, you can GET the results for a complete batch.
 """
+import json
 import logging
 import math
 import time
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from threading import Lock
-from typing import List, Any, Dict, Tuple
+from typing import List, Any, Dict, Tuple, Union
 
 import requests
 
+Json = Union[Dict[str, Any], List[Any]]  # A superset of the JSON specification, excluding scalar objects
+
 
 class BatchClient:
+    API_GEOCODE = '/v1/geocode/search'
+    API_REVERSE_GEOCODE = '/v1/geocode/reverse'
+    API_PLACE_DETAILS = '/v2/place-details'
 
     def __init__(self, api_key: str):
         self._api_key = api_key
@@ -25,7 +32,7 @@ class BatchClient:
         self._headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         self._logger = logging.getLogger(__name__)
 
-    def geocode(self, addresses: List[str], batch_len: int = 1000, parameters: Dict[str, str] = None,
+    def geocode(self, locations: List[Union[str, Dict]], batch_len: int = 1000, parameters: Dict[str, str] = None,
                 simplify_output: bool = False) -> List[dict]:
         """Returns batch geocoding results as a list of dictionaries.
 
@@ -33,17 +40,17 @@ class BatchClient:
         batches, and the level of your geoapify.com subscription. In such a case, it may make more sense to store
         the job URLs to disk, stop there, and continue later with monitor_batch_jobs_and_get_results.
 
-        :param addresses: search queries as list of strings - one address = one string.
+        :param locations: locations in a supported format as validated in parse_geocoding_inputs.
         :param batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
-        :param parameters: optional parameters as key value paris. See the geoapify.com API documentation.
+        :param parameters: optional parameters as key value pairs that apply to all locations. See the Geoapify docs.
         :param simplify_output: if True, the output will be provided in a slightly simplified format.
         :return: list of structured, geocoded, and enriched address records.
         """
-        inputs = [{'params': {'text': val}} for val in addresses]
+        inputs = parse_geocoding_inputs(locations=locations)
         result_urls = self.post_batch_jobs_and_get_job_urls(
-            api='/v1/geocode/search', inputs=inputs, parameters=parameters, batch_len=batch_len)
+            api=self.API_GEOCODE, inputs=inputs, parameters=parameters, batch_len=batch_len)
 
-        sleep_time = self._get_sleep_time(number_of_items=len(inputs))
+        sleep_time = self.get_sleep_time(number_of_items=len(inputs))
         results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
 
         if simplify_output:
@@ -51,7 +58,7 @@ class BatchClient:
         else:
             return results
 
-    def reverse_geocode(self, geocodes: List[Tuple[float, float]], batch_len: int = 1000,
+    def reverse_geocode(self, geocodes: List[Union[Tuple[float, float], Dict[str, float]]], batch_len: int = 1000,
                         parameters: Dict[str, str] = None, simplify_output: bool = False) -> List[dict]:
         """Returns batch reverse geocoding results as a list of dictionaries.
 
@@ -59,17 +66,17 @@ class BatchClient:
         batches, and the level of your geoapify.com subscription. In such a case, it may make more sense to store
         the job URLs to disk, stop there, and continue later with monitor_batch_jobs_and_get_results.
 
-        :param geocodes: list of longitude, latitude tuples.
+        :param geocodes: list of geocodes as supported by self.parse_geocodes.
         :param batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
         :param parameters: optional parameters as dictionary. See the geoapify.com API documentation.
         :param simplify_output: if True, the output will be provided in a slightly simplified format.
         :return: list of structured, reverse geocoded, and enriched address records.
         """
-        inputs = [{'params': {'lat': val[1], 'lon': val[0]}} for val in geocodes]
+        inputs = parse_geocodes(geocodes=geocodes)
         result_urls = self.post_batch_jobs_and_get_job_urls(
-            api='/v1/geocode/reverse', inputs=inputs, parameters=parameters, batch_len=batch_len)
+            api=self.API_REVERSE_GEOCODE, inputs=inputs, parameters=parameters, batch_len=batch_len)
 
-        sleep_time = self._get_sleep_time(number_of_items=len(inputs))
+        sleep_time = self.get_sleep_time(number_of_items=len(inputs))
         results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
 
         if simplify_output:
@@ -77,7 +84,8 @@ class BatchClient:
         else:
             return results
 
-    def place_details(self, place_ids: List[str] = None, geocodes: List[Tuple[float, float]] = None,
+    def place_details(self, place_ids: List[str] = None,
+                      geocodes: List[Union[Tuple[float, float], Dict[str, float]]] = None,
                       batch_len: int = 1000, features: List[str] = None, language: str = None) -> List[dict]:
         """Returns batch place details results as a list of dictionaries.
 
@@ -90,7 +98,7 @@ class BatchClient:
         See the Geoapify.com API docs for a list of available features.
 
         :param place_ids: list of place_id values.
-        :param geocodes: list of longitude, latitude tuples.
+        :param geocodes: list of geocodes as supported by self.parse_geocodes.
         :param batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
         :param features: list of types of details. Defaults to just ["details"] if not specified.
         :param language: 2-character iso language code.
@@ -99,7 +107,7 @@ class BatchClient:
         if place_ids is not None:
             inputs = [{'params': {'id': val}} for val in place_ids]
         elif geocodes is not None:
-            inputs = [{'params': {'lat': val[1], 'lon': val[0]}} for val in geocodes]
+            inputs = parse_geocodes(geocodes=geocodes)
         else:
             raise ValueError('Either place_ids or geocodes must be provided.')
 
@@ -110,15 +118,15 @@ class BatchClient:
             params['lang'] = language
 
         result_urls = self.post_batch_jobs_and_get_job_urls(
-            api='/v2/place-details', inputs=inputs, parameters=params, batch_len=batch_len)
+            api=self.API_PLACE_DETAILS, inputs=inputs, parameters=params, batch_len=batch_len)
 
-        sleep_time = self._get_sleep_time(number_of_items=len(inputs))
+        sleep_time = self.get_sleep_time(number_of_items=len(inputs))
         results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
 
         return results
 
     def post_batch_jobs_and_get_job_urls(self, api: str, inputs: List[Any],
-                                         parameters: dict = None, batch_len: int = 1000) -> List[str]:
+                                         parameters: dict = None, batch_len: int = None) -> List[str]:
         """Triggers batch process on server and returns URLs to be used in GET requests for obtaining results.
 
         The returned URLs represent a batch each. There is a limit in batch size of 1000 which usually means we need
@@ -137,7 +145,10 @@ class BatchClient:
         :param batch_len: maximal size of a single batch - between 2 and 1000.
         :return: list of batch job URLs.
         """
-        batch_len = max(min(batch_len, 1000), 2)  # limit of 1000 dictated by API
+        if batch_len is None:
+            batch_len = 1000
+        else:
+            batch_len = max(min(batch_len, 1000), 2)  # limit of 1000 dictated by API
 
         batches = []
         for i in range(math.ceil(len(inputs) / batch_len)):
@@ -179,6 +190,7 @@ class BatchClient:
         :return: batch job results as a list - one element per location.
         """
         self._total_number_jobs = len(result_urls)
+        sleep_time = max(sleep_time, 3)
 
         with ThreadPoolExecutor(min(10, len(result_urls))) as executor:
             results = executor.map(lambda x: self._task(url=x, sleep_time=sleep_time), result_urls)
@@ -201,10 +213,66 @@ class BatchClient:
                         f'Job {job_id} done - {self._number_completed_jobs}/{self._total_number_jobs} completed.')
                 break
             except KeyError:
-                self._logger.info(f'Job {job_id} still pending - waiting another {sleep_time} seconds.')
+                if response['status'] == 'pending':
+                    self._logger.info(f'Job {job_id} still pending - waiting another {sleep_time} seconds.')
+                else:
+                    self._logger.warning(
+                        f'Unexpected response from server: {response} - waiting another {sleep_time} seconds.')
                 time.sleep(sleep_time)
         return response['results']
 
     @staticmethod
-    def _get_sleep_time(number_of_items: int) -> int:
+    def get_sleep_time(number_of_items: int) -> int:
         return min(300, max(3, int(number_of_items ** 0.4)))
+
+
+def parse_geocoding_inputs(locations: List[Union[str, dict]]) -> List[dict]:
+    """Validate and parse the input for the batch geocoding API.
+
+    Supported formats:
+    - List of free text search strings.
+    - List of dictionaries with structured location definition. See the Geoapify API docs for forward geocoding.
+
+    :param locations: original input.
+    :return: parsed locations.
+    """
+    if all(isinstance(val, str) for val in locations):
+        # Then this is a list of free text search strings:
+        return [{'params': {'text': val}} for val in locations]
+    elif all(isinstance(val, dict) for val in locations):
+        # Then it must be a structured input - see the Geoapify API docs.
+        return [{'params': dictionary} for dictionary in locations]
+    else:
+        raise ValueError('Format of \'locations\' not supported.')
+
+
+def parse_geocodes(geocodes: List[Union[Tuple[float, float], Dict[str, float]]]) -> List[dict]:
+    """Validate and parse lists of geocoordinates.
+
+    Supported formats:
+    - List of (longitude, latitude) tuples as floats.
+    - List of dictionaries, with each containing attributes 'lon' and 'lat'.
+
+    :param geocodes: original input.
+    :return: parsed geocodes.
+    """
+    if all(len(val) == 2 and isinstance(val[0], float) and isinstance(val[1], float) for val in geocodes):
+        # Interpreted as (longitude, latitude) tuples:
+        return [{'params': {'lon': val[0], 'lat': val[1]}} for val in geocodes]
+    elif all(isinstance(val, dict) for val in geocodes):
+        return [{'params': val} for val in geocodes]
+    else:
+        raise ValueError('Format of \'geocodes\' not supported.')
+
+
+def read_data_from_json_file(file_path: Union[str, Path]) -> Json:
+    with open(Path(file_path), 'r') as f:
+        data = json.load(fp=f)
+    logging.info(f'File \'{file_path}\' read from disk.')
+    return data
+
+
+def write_data_to_json_file(data: Json, file_path: Union[str, Path]) -> None:
+    with open(Path(file_path), 'w') as f:
+        json.dump(data, fp=f, indent=4)
+    logging.info(f'File \'{file_path}\' written to disk.')

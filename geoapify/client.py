@@ -91,7 +91,7 @@ class Client:
         :return: list of structured, geocoded, and enriched address records.
         """
         warnings.warn('Method Client.batch_geocode is deprecated - use Client.batch.geocode instead.')
-        return self.batch.geocode(addresses=addresses, batch_len=batch_len, parameters=parameters,
+        return self.batch.geocode(locations=addresses, batch_len=batch_len, parameters=parameters,
                                   simplify_output=True)
 
     def batch_reverse_geocode(self, geocodes: List[Tuple[float, float]], batch_len: int = 1000,
