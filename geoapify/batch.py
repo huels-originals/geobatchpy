@@ -16,7 +16,7 @@ from typing import List, Any, Dict, Tuple, Union
 
 import requests
 
-Json = Union[Dict[str, Any], List[Any]]  # A superset of the JSON specification, excluding scalar objects
+Json = Union[Dict[str, Any], List[Any]]
 
 
 class BatchClient:
@@ -266,6 +266,13 @@ def parse_geocodes(geocodes: List[Union[Tuple[float, float], Dict[str, float]]])
 
 
 def read_data_from_json_file(file_path: Union[str, Path]) -> Json:
+    """Reads data from a JSON file.
+
+    Json = Union[Dict[str, Any], List[Any]] is a superset of the JSON specification, excluding scalar objects.
+
+    :param file_path: path to the JSON file.
+    :return: the Python equivalent of the JSON object.
+    """
     with open(Path(file_path), 'r') as f:
         data = json.load(fp=f)
     logging.info(f'File \'{file_path}\' read from disk.')
@@ -273,6 +280,13 @@ def read_data_from_json_file(file_path: Union[str, Path]) -> Json:
 
 
 def write_data_to_json_file(data: Json, file_path: Union[str, Path]) -> None:
+    """Writes data to a JSON file.
+
+    Json = Union[Dict[str, Any], List[Any]] is a superset of the JSON specification, excluding scalar objects.
+
+    :param data: an object of Json type.
+    :param file_path: destination path of the JSON file.
+    """
     with open(Path(file_path), 'w') as f:
         json.dump(data, fp=f, indent=4)
     logging.info(f'File \'{file_path}\' written to disk.')

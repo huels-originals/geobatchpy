@@ -1,4 +1,4 @@
-# Python client for the geoapify.com API
+# Python client for the Geoapify API data services
 
 This client is in an early stage. We just started and we will contribute several new features, many more geoapify
 endpoints, and else in the near future.
@@ -21,6 +21,13 @@ pip install git+https://github.com/kinsvater/geoapify.git
 
 ### Batch geocoding example
 
+Below we geocode multiple addresses in a single batch. There are two ways how we can provide the location data as input.
+Either we use a list of strings, one string per address. These are then taken as free text searches. Or we provide a
+structured input by specifying attributes of every address in a dictionary. See the
+[Geoapify API documentation](https://apidocs.geoapify.com/) for a complete list of address attributes accepted by the
+geocoding services. In both ways, we can also provide structured attributes as optional `parameters`. E.g., below we
+asked for results in French.
+
 ```python
 from geoapify import Client
 
@@ -31,12 +38,20 @@ addresses = ['Hülser Markt 1, 47839 Krefeld',
              'JCI Beteiligungs GmbH, Am Schimmersfeld 5, Ratingen']
 
 res = client.batch.geocode(locations=addresses, simplify_output=True)
+```
 
-# Showcase the first of three result sets:
-res[0]
+Alternatively you can provide a list of dictionaries, with every address in a structured form. And if you still need
+the free text search for some, you can do this with the `'text'` attribute. Here is the same example, with the first
+two address translated to structured form:
+
+```python
+addresses = [{'city': 'Krefeld', 'street': 'Hülser Markt', 'housenumber': 1, 'postcode': '47839'},
+             {'name': 'DB Schenker', 'city': 'Essen', 'country': 'Germany'},
+             {'text': 'JCI Beteiligungs GmbH, Am Schimmersfeld 5, Ratingen'}]
 ```
 
 ```python
+# Showing the first of three result sets: res[0]
 {
     "query": {
         "text": "Hülser Markt 1, 47839 Krefeld",
@@ -82,7 +97,7 @@ res[0]
 }
 ```
 
-### Use the geoapify CLI to post and monitor large jobs
+### Use the `geoapify` CLI for large jobs
 
 This packages comes with the `geoapify` command line interface. It is useful for executing batch jobs as a daemon or
 with little overhead in a terminal.
