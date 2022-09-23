@@ -79,8 +79,27 @@ class BatchClient:
         else:
             return results
 
-    def places(self):
-        pass
+    def places(self, individual_parameters: List[dict], parameters: dict = None, batch_len: int = 1000) -> List[dict]:
+        """Returns batch places results as a list of dictionaries.
+
+        Every Places call is defined by a set of parameters. See the Geoapify API docs to get an overview. In the
+        batch version, we can provide those parameters in two arguments. `individual_parameters` is a list of
+        dictionaries, one per call, which defines parameters applicable to individual calls. The `parameters` dictionary
+        applies to all calls of the batch.
+
+        :param individual_parameters: one dictionary per Places call.
+        :param parameters: one dictionary with common parameters for all calls.
+        :param batch_len: split calls into chunks of maximal size batch_len for parallel processing.
+        :return: list of structured Places responses.
+        """
+        inputs = [{'params': params} for params in individual_parameters]
+        result_urls = self.post_batch_jobs_and_get_job_urls(
+            api=API_PLACES, inputs=inputs, parameters=parameters, batch_len=batch_len)
+
+        sleep_time = self.get_sleep_time(number_of_items=len(inputs))
+        results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
+
+        return results
 
     def place_details(self, place_ids: List[str] = None,
                       geocodes: List[Union[Tuple[float, float], Dict[str, float]]] = None,
@@ -202,6 +221,7 @@ class BatchClient:
         job_id = url.split('&apiKey')[0]
         while True:
             response = requests.get(url, headers=self._headers).json()
+            print(response)
             try:
                 _ = response['results']
                 with self._lock:

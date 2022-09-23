@@ -6,9 +6,32 @@ from geoapify.client import Client
 
 logging.basicConfig(level=logging.DEBUG)
 
+content_ind = 0
+
 
 class TestClient:
     API_KEY = 'not-required-since-we-mock'
+
+    def test_places(self, monkeypatch):
+        class MockRequestsGet:
+            def __init__(self, url, params, headers):
+                pass
+
+            @staticmethod
+            def json():
+                return RES_TEST_PLACES
+
+        monkeypatch.setattr(requests, 'get', MockRequestsGet)
+
+        client = Client(api_key=self.API_KEY)
+
+        res = client.places(
+            categories=['accommodation.hotel', 'accommodation.hostel', 'accommodation.motel'],
+            filter_by_region='rect:11.563106549898483,48.12898913611139,11.57704581350751,48.13666585409989', limit=3
+        )
+
+        assert len(res['features']) == 3
+        assert res['features'][0]['properties']['city'] == 'Munich'
 
     def test_place_details(self, monkeypatch):
         class MockRequestsGet:
@@ -148,6 +171,47 @@ class TestClient:
         assert res[1]['country'] == 'Belgium'
         assert res[2]['city'] == 'Bucha'
 
+    def test_batch_places(self, monkeypatch):
+        class MockRequestsPost:
+            def __init__(self, request_url, json, headers):
+                self.status_code = 200
+
+            @staticmethod
+            def json():
+                return {'url': ''}
+
+        global content_ind
+        content_ind = -1
+
+        class MockRequestsGet:
+
+            def __init__(self, url, headers):
+                pass
+
+            @staticmethod
+            def json():
+                return RES_TEST_BATCH_PLACES[0]
+
+        monkeypatch.setattr(requests, 'post', MockRequestsPost)
+        monkeypatch.setattr(requests, 'get', MockRequestsGet)
+
+        client = Client(api_key=self.API_KEY)
+
+        ind_params = [
+            {'filter': 'rect:11.563106549898483,48.12898913611139,11.57704581350751,48.13666585409989',
+             'conditions': 'named'},
+            {'filter': 'circle:7.010232,51.450216,3000'}
+        ]
+
+        params = {'categories': ['accommodation.hotel', 'accommodation.hostel', 'accommodation.motel'],
+                  'limit': 3}
+
+        res = client.batch.places(individual_parameters=ind_params, parameters=params)
+
+        assert len(res) == 2
+        assert len(res[0]['result']['features']) == 3
+        assert res[0]['result']['features'][2]['properties']['city'] == 'Munich'
+
     def test_batch_place_details(self, monkeypatch):
         class MockRequestsPost:
             def __init__(self, request_url, json, headers):
@@ -190,6 +254,209 @@ class TestClient:
 
 
 # API responses of the tests:
+RES_TEST_PLACES = {
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "name": "Deutsche Eiche",
+                "housenumber": "13",
+                "street": "Reichenbachstraße",
+                "neighbourhood": "Gärtnerplatz",
+                "suburb": "Gärtnerplatz",
+                "district": "Ludwigsvorstadt-Isarvorstadt",
+                "city": "Munich",
+                "state": "Bavaria",
+                "postcode": "80469",
+                "country": "Germany",
+                "country_code": "de",
+                "lon": 11.576359869215747,
+                "lat": 48.132741550000006,
+                "formatted": "Deutsche Eiche, Reichenbachstraße 13, 80469 Munich, Germany",
+                "address_line1": "Deutsche Eiche",
+                "address_line2": "Reichenbachstraße 13, 80469 Munich, Germany",
+                "categories": [
+                    "accommodation",
+                    "accommodation.hotel",
+                    "building",
+                    "building.accommodation",
+                    "wheelchair",
+                    "wheelchair.limited",
+                ],
+                "details": [
+                    "details",
+                    "details.accommodation",
+                    "details.building",
+                    "details.contact",
+                    "details.facilities",
+                    "details.wiki_and_media",
+                ],
+                "datasource": {
+                    "sourcename": "openstreetmap",
+                    "attribution": "© OpenStreetMap contributors",
+                    "license": "Open Database Licence",
+                    "url": "https://www.openstreetmap.org/copyright",
+                    "raw": {
+                        "name": "Deutsche Eiche",
+                        "lgbtq": "primary",
+                        "stars": "3S",
+                        "osm_id": 99876859,
+                        "tourism": "hotel",
+                        "website": "https://www.deutsche-eiche.com/",
+                        "building": "yes",
+                        "operator": "Josef Sattler GmbH",
+                        "osm_type": "w",
+                        "wikidata": "Q1630878",
+                        "addr:city": "München",
+                        "wikipedia": "de:Hotel Deutsche Eiche",
+                        "start_date": 1864,
+                        "wheelchair": "limited",
+                        "addr:street": "Reichenbachstraße",
+                        "contact:fax": " 49 89 23116698",
+                        "addr:country": "DE",
+                        "addr:postcode": 80469,
+                        "contact:email": "info@deutsche-eiche.com",
+                        "contact:phone": " 49 89 2311660",
+                        "addr:housenumber": 13,
+                    },
+                },
+                "place_id": "51efd7d3a4182727405994dd03acfd104840f00102f901fbfff3050000000092030e4465757473636865204569636865",
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [11.57635989271145, 48.13274145306346],
+            },
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "name": "Hotel Atlanta",
+                "housenumber": "58",
+                "street": "Sendlinger Straße",
+                "quarter": "Hackenviertel",
+                "suburb": "Altstadt-Lehel",
+                "city": "Munich",
+                "state": "Bavaria",
+                "postcode": "80331",
+                "country": "Germany",
+                "country_code": "de",
+                "lon": 11.56825361565961,
+                "lat": 48.13447675,
+                "formatted": "Hotel Atlanta, Sendlinger Straße 58, 80331 Munich, Germany",
+                "address_line1": "Hotel Atlanta",
+                "address_line2": "Sendlinger Straße 58, 80331 Munich, Germany",
+                "categories": [
+                    "accommodation",
+                    "accommodation.hotel",
+                    "building",
+                    "building.accommodation",
+                    "building.residential",
+                    "internet_access",
+                    "internet_access.free",
+                ],
+                "details": [
+                    "details",
+                    "details.accommodation",
+                    "details.contact",
+                    "details.facilities",
+                ],
+                "datasource": {
+                    "sourcename": "openstreetmap",
+                    "attribution": "© OpenStreetMap contributors",
+                    "license": "Open Database Licence",
+                    "url": "https://www.openstreetmap.org/copyright",
+                    "raw": {
+                        "fax": " 49 89 2609027",
+                        "name": "Hotel Atlanta",
+                        "email": "info@hotel-atlanta.de",
+                        "phone": " 49 89 263605",
+                        "stars": 2,
+                        "osm_id": 55800408,
+                        "smoking": "no",
+                        "tourism": "hotel",
+                        "website": "http://www.hotel-atlanta.de/",
+                        "building": "apartments",
+                        "osm_type": "w",
+                        "addr:city": "München",
+                        "addr:street": "Sendlinger Straße",
+                        "addr:country": "DE",
+                        "addr:postcode": 80331,
+                        "internet_access": "wlan",
+                        "addr:housenumber": 58,
+                        "internet_access:fee": "no",
+                    },
+                },
+                "place_id": "516b60c1d2ec22274059cc86883f37114840f00102f901587253030000000092030d486f74656c2041746c616e7461",
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [11.56821306810908, 48.134498540557246],
+            },
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "name": "Hotel Herzog Wilhelm Tannenbaum Nebengebäude",
+                "housenumber": "18",
+                "street": "Kreuzstraße",
+                "quarter": "Hackenviertel",
+                "suburb": "Altstadt-Lehel",
+                "city": "Munich",
+                "state": "Bavaria",
+                "postcode": "80331",
+                "country": "Germany",
+                "country_code": "de",
+                "lon": 11.5675918,
+                "lat": 48.135158,
+                "formatted": "Hotel Herzog Wilhelm Tannenbaum Nebengebäude, Kreuzstraße 18, 80331 Munich, Germany",
+                "address_line1": "Hotel Herzog Wilhelm Tannenbaum Nebengebäude",
+                "address_line2": "Kreuzstraße 18, 80331 Munich, Germany",
+                "categories": [
+                    "accommodation",
+                    "accommodation.hotel",
+                    "internet_access",
+                ],
+                "details": [
+                    "details",
+                    "details.accommodation",
+                    "details.contact",
+                    "details.facilities",
+                ],
+                "datasource": {
+                    "sourcename": "openstreetmap",
+                    "attribution": "© OpenStreetMap contributors",
+                    "license": "Open Database Licence",
+                    "url": "https://www.openstreetmap.org/copyright",
+                    "raw": {
+                        "fax": " 49 89 23036701",
+                        "name": "Hotel Herzog Wilhelm Tannenbaum Nebengebäude",
+                        "email": "info@herzog-wilhelm.de",
+                        "phone": " 49 89 230360",
+                        "stars": 3,
+                        "osm_id": 305433531,
+                        "tourism": "hotel",
+                        "website": "http://www.herzog-wilhelm.de",
+                        "operator": "Herzog-Wilhelm-Restaurant-Tannenbaum GmbH",
+                        "osm_type": "n",
+                        "addr:city": "München",
+                        "addr:street": "Kreuzstraße",
+                        "addr:country": "DE",
+                        "addr:postcode": 80331,
+                        "internet_access": "wlan",
+                        "addr:housenumber": 18,
+                    },
+                },
+                "place_id": "51a0f474649b2227405963b17adb4c114840f00103f901bb8b34120000000092032d486f74656c204865727a6f672057696c68656c6d2054616e6e656e6261756d204e6562656e676562c3a4756465",
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [11.567591800000002, 48.13515799990525],
+            },
+        },
+    ],
+}
+
 RES_TEST_PLACE_DETAILS = {
     "type": "FeatureCollection",
     "features": [
@@ -909,6 +1176,430 @@ RES_TEST_BATCH_REVERSE_GEOCODE = [
             }
         ]
     }]
+
+RES_TEST_BATCH_PLACES = [
+{
+    "api": "/v2/places",
+    "params": {
+        "format": "json",
+        "categories": [
+            "accommodation.hotel",
+            "accommodation.hostel",
+            "accommodation.motel",
+        ],
+        "limit": 3,
+    },
+    "id": "3b213d5b513644778aa72c73238378b5",
+    "results": [
+        {
+            "params": {
+                "filter": "rect:11.563106549898483,48.12898913611139,11.57704581350751,48.13666585409989",
+                "conditions": "named",
+            },
+            "result": {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "name": "Deutsche Eiche",
+                            "housenumber": "13",
+                            "street": "Reichenbachstraße",
+                            "neighbourhood": "Gärtnerplatz",
+                            "suburb": "Gärtnerplatz",
+                            "district": "Ludwigsvorstadt-Isarvorstadt",
+                            "city": "Munich",
+                            "state": "Bavaria",
+                            "postcode": "80469",
+                            "country": "Germany",
+                            "country_code": "de",
+                            "lon": 11.576359869215747,
+                            "lat": 48.132741550000006,
+                            "formatted": "Deutsche Eiche, Reichenbachstraße 13, 80469 Munich, Germany",
+                            "address_line1": "Deutsche Eiche",
+                            "address_line2": "Reichenbachstraße 13, 80469 Munich, Germany",
+                            "categories": [
+                                "accommodation",
+                                "accommodation.hotel",
+                                "building",
+                                "building.accommodation",
+                                "wheelchair",
+                                "wheelchair.limited",
+                            ],
+                            "details": [
+                                "details",
+                                "details.accommodation",
+                                "details.building",
+                                "details.contact",
+                                "details.facilities",
+                                "details.wiki_and_media",
+                            ],
+                            "datasource": {
+                                "sourcename": "openstreetmap",
+                                "attribution": "© OpenStreetMap contributors",
+                                "license": "Open Database Licence",
+                                "url": "https://www.openstreetmap.org/copyright",
+                                "raw": {
+                                    "name": "Deutsche Eiche",
+                                    "lgbtq": "primary",
+                                    "stars": "3S",
+                                    "osm_id": 99876859,
+                                    "tourism": "hotel",
+                                    "website": "https://www.deutsche-eiche.com/",
+                                    "building": "yes",
+                                    "operator": "Josef Sattler GmbH",
+                                    "osm_type": "w",
+                                    "wikidata": "Q1630878",
+                                    "addr:city": "München",
+                                    "wikipedia": "de:Hotel Deutsche Eiche",
+                                    "start_date": 1864,
+                                    "wheelchair": "limited",
+                                    "addr:street": "Reichenbachstraße",
+                                    "contact:fax": " 49 89 23116698",
+                                    "addr:country": "DE",
+                                    "addr:postcode": 80469,
+                                    "contact:email": "info@deutsche-eiche.com",
+                                    "contact:phone": " 49 89 2311660",
+                                    "addr:housenumber": 13,
+                                },
+                            },
+                            "place_id": "51efd7d3a4182727405994dd03acfd104840f00102f901fbfff3050000000092030e4465757473636865204569636865",
+                        },
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [11.57635989271145, 48.13274145306346],
+                        },
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "name": "Hotel Atlanta",
+                            "housenumber": "58",
+                            "street": "Sendlinger Straße",
+                            "quarter": "Hackenviertel",
+                            "suburb": "Altstadt-Lehel",
+                            "city": "Munich",
+                            "state": "Bavaria",
+                            "postcode": "80331",
+                            "country": "Germany",
+                            "country_code": "de",
+                            "lon": 11.56825361565961,
+                            "lat": 48.13447675,
+                            "formatted": "Hotel Atlanta, Sendlinger Straße 58, 80331 Munich, Germany",
+                            "address_line1": "Hotel Atlanta",
+                            "address_line2": "Sendlinger Straße 58, 80331 Munich, Germany",
+                            "categories": [
+                                "accommodation",
+                                "accommodation.hotel",
+                                "building",
+                                "building.accommodation",
+                                "building.residential",
+                                "internet_access",
+                                "internet_access.free",
+                            ],
+                            "details": [
+                                "details",
+                                "details.accommodation",
+                                "details.contact",
+                                "details.facilities",
+                            ],
+                            "datasource": {
+                                "sourcename": "openstreetmap",
+                                "attribution": "© OpenStreetMap contributors",
+                                "license": "Open Database Licence",
+                                "url": "https://www.openstreetmap.org/copyright",
+                                "raw": {
+                                    "fax": " 49 89 2609027",
+                                    "name": "Hotel Atlanta",
+                                    "email": "info@hotel-atlanta.de",
+                                    "phone": " 49 89 263605",
+                                    "stars": 2,
+                                    "osm_id": 55800408,
+                                    "smoking": "no",
+                                    "tourism": "hotel",
+                                    "website": "http://www.hotel-atlanta.de/",
+                                    "building": "apartments",
+                                    "osm_type": "w",
+                                    "addr:city": "München",
+                                    "addr:street": "Sendlinger Straße",
+                                    "addr:country": "DE",
+                                    "addr:postcode": 80331,
+                                    "internet_access": "wlan",
+                                    "addr:housenumber": 58,
+                                    "internet_access:fee": "no",
+                                },
+                            },
+                            "place_id": "516b60c1d2ec22274059cc86883f37114840f00102f901587253030000000092030d486f74656c2041746c616e7461",
+                        },
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [11.56821306810908, 48.134498540557246],
+                        },
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "name": "Hotel Herzog Wilhelm Tannenbaum Nebengebäude",
+                            "housenumber": "18",
+                            "street": "Kreuzstraße",
+                            "quarter": "Hackenviertel",
+                            "suburb": "Altstadt-Lehel",
+                            "city": "Munich",
+                            "state": "Bavaria",
+                            "postcode": "80331",
+                            "country": "Germany",
+                            "country_code": "de",
+                            "lon": 11.5675918,
+                            "lat": 48.135158,
+                            "formatted": "Hotel Herzog Wilhelm Tannenbaum Nebengebäude, Kreuzstraße 18, 80331 Munich, Germany",
+                            "address_line1": "Hotel Herzog Wilhelm Tannenbaum Nebengebäude",
+                            "address_line2": "Kreuzstraße 18, 80331 Munich, Germany",
+                            "categories": [
+                                "accommodation",
+                                "accommodation.hotel",
+                                "internet_access",
+                            ],
+                            "details": [
+                                "details",
+                                "details.accommodation",
+                                "details.contact",
+                                "details.facilities",
+                            ],
+                            "datasource": {
+                                "sourcename": "openstreetmap",
+                                "attribution": "© OpenStreetMap contributors",
+                                "license": "Open Database Licence",
+                                "url": "https://www.openstreetmap.org/copyright",
+                                "raw": {
+                                    "fax": " 49 89 23036701",
+                                    "name": "Hotel Herzog Wilhelm Tannenbaum Nebengebäude",
+                                    "email": "info@herzog-wilhelm.de",
+                                    "phone": " 49 89 230360",
+                                    "stars": 3,
+                                    "osm_id": 305433531,
+                                    "tourism": "hotel",
+                                    "website": "http://www.herzog-wilhelm.de",
+                                    "operator": "Herzog-Wilhelm-Restaurant-Tannenbaum GmbH",
+                                    "osm_type": "n",
+                                    "addr:city": "München",
+                                    "addr:street": "Kreuzstraße",
+                                    "addr:country": "DE",
+                                    "addr:postcode": 80331,
+                                    "internet_access": "wlan",
+                                    "addr:housenumber": 18,
+                                },
+                            },
+                            "place_id": "51a0f474649b2227405963b17adb4c114840f00103f901bb8b34120000000092032d486f74656c204865727a6f672057696c68656c6d2054616e6e656e6261756d204e6562656e676562c3a4756465",
+                        },
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [11.567591800000002, 48.13515799990525],
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            "params": {"filter": "circle:7.010232,51.450216,3000"},
+            "result": {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "name": "Atlantic Congress Hotel",
+                            "housenumber": "3",
+                            "street": "Messeplatz",
+                            "suburb": "Rüttenscheid",
+                            "district": "Stadtbezirk II",
+                            "city": "Essen",
+                            "state": "North Rhine-Westphalia",
+                            "postcode": "45131",
+                            "country": "Germany",
+                            "country_code": "de",
+                            "lon": 6.9988989633788234,
+                            "lat": 51.4316226,
+                            "formatted": "Atlantic Congress Hotel, Messeplatz 3, 45131 Essen, Germany",
+                            "address_line1": "Atlantic Congress Hotel",
+                            "address_line2": "Messeplatz 3, 45131 Essen, Germany",
+                            "categories": [
+                                "accommodation",
+                                "accommodation.hotel",
+                                "building",
+                                "building.accommodation",
+                                "building.commercial",
+                                "building.office",
+                                "wheelchair",
+                                "wheelchair.yes",
+                            ],
+                            "details": [
+                                "details",
+                                "details.building",
+                                "details.contact",
+                                "details.facilities",
+                            ],
+                            "datasource": {
+                                "sourcename": "openstreetmap",
+                                "attribution": "© OpenStreetMap contributors",
+                                "license": "Open Database Licence",
+                                "url": "https://www.openstreetmap.org/copyright",
+                                "raw": {
+                                    "name": "Atlantic Congress Hotel",
+                                    "email": "info@atlantic-essen.de",
+                                    "phone": " 49 201 9 46 28-0",
+                                    "osm_id": 37075109,
+                                    "tourism": "hotel",
+                                    "website": "https://www.atlantic-congress-hotel-messe-essen.de/gastronomie/",
+                                    "building": "commercial",
+                                    "osm_type": "w",
+                                    "addr:city": "Essen",
+                                    "wheelchair": "yes",
+                                    "addr:street": "Messeplatz",
+                                    "addr:country": "DE",
+                                    "addr:postcode": 45131,
+                                    "building:levels": 3,
+                                    "addr:housenumber": 3,
+                                },
+                            },
+                            "place_id": "511a4fc797defe1b4059fe3d0f653fb74940f00102f901a5b835020000000092031741746c616e74696320436f6e677265737320486f74656c",
+                        },
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [6.998895999469619, 51.4316221546578],
+                        },
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "name": "Hotel Boutique Essen City",
+                            "housenumber": "19",
+                            "street": "Hoffnungstraße",
+                            "suburb": "Stadtkern",
+                            "district": "Stadtbezirk I",
+                            "city": "Essen",
+                            "state": "North Rhine-Westphalia",
+                            "postcode": "45127",
+                            "country": "Germany",
+                            "country_code": "de",
+                            "lon": 7.006111000165929,
+                            "lat": 51.4549952,
+                            "formatted": "Hotel Boutique Essen City, Hoffnungstraße 19, 45127 Essen, Germany",
+                            "address_line1": "Hotel Boutique Essen City",
+                            "address_line2": "Hoffnungstraße 19, 45127 Essen, Germany",
+                            "categories": [
+                                "accommodation",
+                                "accommodation.hotel",
+                                "building",
+                                "building.accommodation",
+                            ],
+                            "details": [
+                                "details",
+                                "details.building",
+                                "details.contact",
+                            ],
+                            "datasource": {
+                                "sourcename": "openstreetmap",
+                                "attribution": "© OpenStreetMap contributors",
+                                "license": "Open Database Licence",
+                                "url": "https://www.openstreetmap.org/copyright",
+                                "raw": {
+                                    "name": "Hotel Boutique Essen City",
+                                    "brand": "Trip Inn Hotels",
+                                    "email": "boutique-essen@tripinn-hotels.com",
+                                    "phone": " 49 201 22 14 14",
+                                    "osm_id": 49319745,
+                                    "tourism": "hotel",
+                                    "website": "https://tripinn-hotels.com/essen-boutique/",
+                                    "building": "yes",
+                                    "osm_type": "w",
+                                    "addr:city": "Essen",
+                                    "roof:shape": "flat",
+                                    "addr:street": "Hoffnungstraße",
+                                    "roof:colour": "black",
+                                    "addr:country": "DE",
+                                    "addr:postcode": 45127,
+                                    "roof:material": "tar_paper",
+                                    "building:colour": "white",
+                                    "building:levels": 4,
+                                    "addr:housenumber": 19,
+                                    "building:material": "plaster",
+                                },
+                            },
+                            "place_id": "510772231c42061c4059f2b3e70d3dba4940f00102f901418ff00200000000920319486f74656c20426f75746971756520457373656e2043697479",
+                        },
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [7.00611156431524, 51.454988229881465],
+                        },
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "name": "Ibis",
+                            "housenumber": "50",
+                            "street": "Hollestraße",
+                            "suburb": "Ostviertel",
+                            "district": "Stadtbezirk I",
+                            "city": "Essen",
+                            "state": "North Rhine-Westphalia",
+                            "postcode": "45127",
+                            "country": "Germany",
+                            "country_code": "de",
+                            "lon": 7.018488078348117,
+                            "lat": 51.452833850000005,
+                            "formatted": "Ibis, Hollestraße 50, 45127 Essen, Germany",
+                            "address_line1": "Ibis",
+                            "address_line2": "Hollestraße 50, 45127 Essen, Germany",
+                            "categories": [
+                                "accommodation",
+                                "accommodation.hotel",
+                                "building",
+                                "building.accommodation",
+                            ],
+                            "details": [
+                                "details",
+                                "details.accommodation",
+                                "details.contact",
+                            ],
+                            "datasource": {
+                                "sourcename": "openstreetmap",
+                                "attribution": "© OpenStreetMap contributors",
+                                "license": "Open Database Licence",
+                                "url": "https://www.openstreetmap.org/copyright",
+                                "raw": {
+                                    "fax": " 49 201 2 428 600",
+                                    "name": "Ibis",
+                                    "brand": "Ibis",
+                                    "email": "H1444@ACCOR.COM",
+                                    "phone": " 49 201 24 280",
+                                    "stars": 2,
+                                    "osm_id": 54170279,
+                                    "tourism": "hotel",
+                                    "website": "http://www.ibis.com/de/hotel-1444-ibis-essen-hauptbahnhof/index.shtml",
+                                    "building": "yes",
+                                    "osm_type": "w",
+                                    "addr:city": "Essen",
+                                    "addr:street": "Hollestraße",
+                                    "addr:country": "DE",
+                                    "addr:postcode": 45127,
+                                    "brand:wikidata": "Q920166",
+                                    "brand:wikipedia": "en:Ibis (hotel)",
+                                    "addr:housenumber": 50,
+                                },
+                            },
+                            "place_id": "51a12f70f5f7121c405911259c5af6b94940f00102f901a7923a030000000092030449626973",
+                        },
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [7.0185240125391894, 51.452830625765394],
+                        },
+                    },
+                ],
+            },
+        },
+    ],
+}
+]
 
 RES_TEST_BATCH_PLACE_DETAILS = [
     {
