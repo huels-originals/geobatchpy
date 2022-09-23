@@ -113,7 +113,8 @@ geoapify post-batch-jobs --help
 See the following example how to generate a JSON input file for the batch geocoding service using Python:
 
 ```python
-from geoapify.batch import parse_geocoding_inputs, write_data_to_json_file
+from geoapify.batch import parse_geocoding_inputs
+from geoapify.utils import write_data_to_json_file
 
 addresses = ['Hülser Markt 1, 47839 Krefeld',
              'DB Schenker, Essen, Germany',

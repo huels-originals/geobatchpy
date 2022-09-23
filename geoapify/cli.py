@@ -6,7 +6,7 @@ from uuid import uuid4
 import click
 
 from geoapify import Client, __version__
-from geoapify.batch import read_data_from_json_file, write_data_to_json_file
+from geoapify.utils import read_data_from_json_file, write_data_to_json_file
 
 logging.basicConfig(
     level=logging.INFO, datefmt='%H:%M:%S',
