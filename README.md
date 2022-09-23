@@ -31,13 +31,14 @@ asked for results in French.
 ```python
 from geoapify import Client
 
-client = Client(api_key='<your-api-key>', parameters={'lang': 'fr'})  # see the geoapify.com API docs for more options
+client = Client(api_key='<your-api-key>')
 
 addresses = ['Hülser Markt 1, 47839 Krefeld',
              'DB Schenker, Essen, Germany',
              'JCI Beteiligungs GmbH, Am Schimmersfeld 5, Ratingen']
 
-res = client.batch.geocode(locations=addresses, simplify_output=True)
+# see the geoapify.com API docs for more optional parameters
+res = client.batch.geocode(locations=addresses, parameters={'lang': 'fr'}, simplify_output=True)
 ```
 
 Alternatively you can provide a list of dictionaries, with every address in a structured form. And if you still need
