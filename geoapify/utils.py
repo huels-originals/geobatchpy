@@ -27,8 +27,11 @@ def read_data_from_json_file(file_path: Union[str, Path]) -> Json:
 
     Json = Union[Dict[str, Any], List[Any]] is a superset of the JSON specification, excluding scalar objects.
 
-    :param file_path: path to the JSON file.
-    :return: the Python equivalent of the JSON object.
+    Arguments:
+        file_path: path to the JSON file.
+
+    Returns:
+        The Python equivalent of the JSON object.
     """
     with open(Path(file_path), 'r') as f:
         data = json.load(fp=f)
@@ -41,8 +44,9 @@ def write_data_to_json_file(data: Json, file_path: Union[str, Path]) -> None:
 
     Json = Union[Dict[str, Any], List[Any]] is a superset of the JSON specification, excluding scalar objects.
 
-    :param data: an object of Json type.
-    :param file_path: destination path of the JSON file.
+    Arguments:
+        data: an object of Json type.
+        file_path: destination path of the JSON file.
     """
     with open(Path(file_path), 'w') as f:
         json.dump(data, fp=f, indent=4)

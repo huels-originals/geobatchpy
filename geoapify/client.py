@@ -18,20 +18,24 @@ class Client:
 
     def places(self, categories: Union[str, List[str]], filter_by_region: str = None,
                filter_by_name: str = None, proximity_by: Tuple[float, float] = None,
-               conditions: Union[str, List[str]] = None, limit: int = 20, offset: int = None, language: str = None):
+               conditions: Union[str, List[str]] = None, limit: int = 20, offset: int = None,
+               language: str = None) -> dict:
         """Query locations of different categories.
 
         See the Geoapify API documentation for a full list of categories and any other supported parameters.
 
-        :param categories: returned places must be in one of the chosen categories.
-        :param filter_by_region: places must be within boundaries of the specified geometry.
-        :param filter_by_name: places' names are used for filtering.
-        :param proximity_by: (lon, lat) tuple; places will be returned in order of proximity to the coordinates.
-        :param conditions: places must fulfill all of the provided conditions.
-        :param limit: maximal number of places returned.
-        :param offset: return next places by starting counting from `offset`.
-        :param language: iso code of the language in which places should be returned.
-        :return: list of places encoded in JSON like dictionaries.
+        Arguments:
+            categories: returned places must be in one of the chosen categories.
+            filter_by_region: places must be within boundaries of the specified geometry.
+            filter_by_name: places' names are used for filtering.
+            proximity_by: (lon, lat) tuple; places will be returned in order of proximity to the coordinates.
+            conditions: places must fulfill all of the provided conditions.
+            limit: maximal number of places returned.
+            offset: return next places by starting counting from `offset`.
+            language: iso code of the language in which places should be returned.
+
+        Returns:
+            List of places encoded in JSON like dictionaries.
         """
         request_url = get_api_url(api=API_PLACES, api_key=self._api_key)
         params = dict()
@@ -58,18 +62,21 @@ class Client:
         return requests.get(url=request_url, params=params, headers=self._headers).json()
 
     def place_details(self, place_id: str = None, longitude: float = None, latitude: float = None,
-                      features: List[str] = None, language: str = None):
+                      features: List[str] = None, language: str = None) -> dict:
         """Returns place details of a location.
 
         Use either the `place_id` (returned by geocoding) or geo coordinates to specify a location. The `features`
         argument specifies which kind of details to request. See the geoapify.com documentation.
 
-        :param place_id: the Nominatim place_id as a string.
-        :param latitude: float or string representing latitude.
-        :param longitude: float or string representing longitude.
-        :param features: list of types of details. Defaults to just ["details"] if not specified.
-        :param language: 2-character iso language code.
-        :return: structured location details.
+        Arguments:
+            place_id: the Nominatim place_id as a string.
+            latitude: float or string representing latitude.
+            longitude: float or string representing longitude.
+            features: list of types of details. Defaults to just ["details"] if not specified.
+            language: 2-character iso language code.
+
+        Returns:
+            Structured location details.
         """
         request_url = get_api_url(api=API_PLACE_DETAILS, api_key=self._api_key)
         params = dict()
@@ -93,9 +100,12 @@ class Client:
         Use either a free text search wit the `text` argument or alternatively provide input in a structured
         form using the `parameters` argument. See the geoapify.com API documentation.
 
-        :param text: free text search of a location.
-        :param parameters: structured search as key value pairs and other optional parameters.
-        :return: structured, geocoded, and enriched address records.
+        Arguments:
+            text: free text search of a location.
+            parameters: structured search as key value pairs and other optional parameters.
+
+        Returns:
+            Structured, geocoded, and enriched address record.
         """
         request_url = get_api_url(api=API_GEOCODE, api_key=self._api_key)
 
@@ -108,9 +118,12 @@ class Client:
     def reverse_geocode(self, longitude: float, latitude: float) -> dict:
         """Returns reverse geocoding results as a dictionary.
 
-        :param latitude: float or string representing latitude.
-        :param longitude: float or string representing longitude.
-        :return: structured, reverse geocoded, and enriched address records.
+        Arguments:
+            latitude: float or string representing latitude.
+            longitude: float or string representing longitude.
+
+        Returns:
+            Structured, reverse geocoded, and enriched address records.
         """
         request_url = get_api_url(api=API_REVERSE_GEOCODE, api_key=self._api_key)
         params = {'lat': str(latitude), 'lon': str(longitude)}
@@ -124,10 +137,13 @@ class Client:
         Warning: this whole process may take long time (hours), depending on the size of the input, the number of
         batches, and the level of your geoapify.com subscription.
 
-        :param addresses: search queries as list of strings; one address = one string.
-        :param batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
-        :param parameters: optional parameters as key value paris. See the geoapify.com API documentation.
-        :return: list of structured, geocoded, and enriched address records.
+        Arguments:
+            addresses: search queries as list of strings; one address = one string.
+            batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
+            parameters: optional parameters as key value paris. See the geoapify.com API documentation.
+
+        Returns:
+            List of structured, geocoded, and enriched address records.
         """
         warnings.warn('Method Client.batch_geocode is deprecated - use Client.batch.geocode instead.')
         return self.batch.geocode(locations=addresses, batch_len=batch_len, parameters=parameters,
@@ -140,10 +156,13 @@ class Client:
         Warning: this whole process may take long time (hours), depending on the size of the input, the number of
         batches, and the level of your geoapify.com subscription.
 
-        :param geocodes: list of longitude, latitude tuples.
-        :param batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
-        :param parameters: optional parameters as dictionary. See the geoapify.com API documentation.
-        :return: list of structured, reverse geocoded, and enriched address records.
+        Arguments:
+            geocodes: list of longitude, latitude tuples.
+            batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
+            parameters: optional parameters as dictionary. See the geoapify.com API documentation.
+
+        Returns:
+            List of structured, reverse geocoded, and enriched address records.
         """
         warnings.warn('Method Client.batch_reverse_geocode is deprecated - use Client.batch.reverse_geocode instead.')
         return self.batch.reverse_geocode(geocodes=geocodes, batch_len=batch_len, parameters=parameters,
