@@ -1,3 +1,5 @@
 # CLI
 
-::: geoapify.cli
+::: mkdocs-click
+    :module: geoapify.cli
+    :command: main
