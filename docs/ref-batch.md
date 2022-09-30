@@ -1,0 +1,3 @@
+# Batch module
+
+::: geoapify.batch

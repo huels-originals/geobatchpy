@@ -29,10 +29,16 @@ copyright: >
   <a href="#__consent">Change cookie settings</a>
 plugins:
   - search
+  - mkdocstrings
 repo_url: https://github.com/kinsvater/geoapify
 repo_name: kinsvater/geoapify
 nav:
   - Home: index.md
   - Install: install.md
   - Examples: example.md
+  - API:
+    - ref-client.md
+    - ref-batch.md
+    - ref-cli.md
+    - ref-utils.md
   - Further reading: references.md

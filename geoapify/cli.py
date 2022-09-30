@@ -68,9 +68,10 @@ def post_batch_jobs(path_data_in, path_data_out, api_key):
     - id: str, any name for reference. This will be stored as the data_input_id in the outputs.
 
     \b
-    :param path_data_in: path to the JSON file read as input.
-    :param path_data_out: destination of the JSON output file.
-    :param api_key: if not set, will be read from the GEOAPIFY_KEY environment variable.
+    Arguments:
+        path_data_in: path to the JSON file read as input.
+        path_data_out: destination of the JSON output file.
+        api_key: if not set, will be read from the GEOAPIFY_KEY environment variable.
     """
     data_in = read_data_from_json_file(file_path=path_data_in)
     client = Client(api_key=get_api_key(api_key=api_key))
@@ -108,9 +109,10 @@ def monitor_batch_jobs(path_data_in, path_data_out, api_key):
     - id: str, any name for reference. This will be stored as the data_input_id in the outputs.
 
     \b
-    :param path_data_in: path to the JSON file read as input.
-    :param path_data_out: destination of the JSON output file.
-    :param api_key: if not set, will be read from the GEOAPIFY_KEY environment variable.
+    Arguments:
+        path_data_in: path to the JSON file read as input.
+        path_data_out: destination of the JSON output file.
+        api_key: if not set, will be read from the GEOAPIFY_KEY environment variable.
     """
     data_in = read_data_from_json_file(file_path=path_data_in)
     client = Client(api_key=get_api_key(api_key=api_key))
