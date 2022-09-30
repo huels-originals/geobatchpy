@@ -1,7 +1,7 @@
 # Python client for the Geoapify API data services
 
-This client is in an early stage. We just started and we will contribute several new features, many more geoapify
-endpoints, and else in the near future.
+This client is in active development. We just started, with a few specific use cases in mind. This explains why some
+Geoapify endpoints are covered already, others are not. But we actively work on getting all covered soon.
 
 ## How to install
 
@@ -114,7 +114,8 @@ geoapify post-batch-jobs --help
 See the following example how to generate a JSON input file for the batch geocoding service using Python:
 
 ```python
-from geoapify.batch import parse_geocoding_inputs, write_data_to_json_file
+from geoapify.batch import parse_geocoding_inputs
+from geoapify.utils import write_data_to_json_file
 
 addresses = ['Hülser Markt 1, 47839 Krefeld',
              'DB Schenker, Essen, Germany',

@@ -1,22 +1,61 @@
 import logging
 import warnings
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import requests
 
 from geoapify.batch import BatchClient
+from geoapify.utils import get_api_url, API_GEOCODE, API_REVERSE_GEOCODE, API_PLACES, API_PLACE_DETAILS
 
 
 class Client:
-    _url_place_details = 'https://api.geoapify.com/v2/place-details?apiKey={}'
-    _url_geocode = 'https://api.geoapify.com/v1/geocode/search?apiKey={}'
-    _url_reverse_geocode = 'https://api.geoapify.com/v1/geocode/reverse?apiKey={}'
 
     def __init__(self, api_key: str):
         self._api_key = api_key
         self.batch = BatchClient(api_key=api_key)
         self._headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         self._logger = logging.getLogger(__name__)
+
+    def places(self, categories: Union[str, List[str]], filter_by_region: str = None,
+               filter_by_name: str = None, proximity_by: Tuple[float, float] = None,
+               conditions: Union[str, List[str]] = None, limit: int = 20, offset: int = None, language: str = None):
+        """Query locations of different categories.
+
+        See the Geoapify API documentation for a full list of categories and any other supported parameters.
+
+        :param categories: returned places must be in one of the chosen categories.
+        :param filter_by_region: places must be within boundaries of the specified geometry.
+        :param filter_by_name: places' names are used for filtering.
+        :param proximity_by: (lon, lat) tuple; places will be returned in order of proximity to the coordinates.
+        :param conditions: places must fulfill all of the provided conditions.
+        :param limit: maximal number of places returned.
+        :param offset: return next places by starting counting from `offset`.
+        :param language: iso code of the language in which places should be returned.
+        :return: list of places encoded in JSON like dictionaries.
+        """
+        request_url = get_api_url(api=API_PLACES, api_key=self._api_key)
+        params = dict()
+        if isinstance(categories, str):
+            params['categories'] = categories
+        else:
+            params['categories'] = ','.join(categories)
+        if filter_by_region is not None:
+            params['filter'] = filter_by_region
+        if filter_by_name is not None:
+            params['name'] = filter_by_name
+        if proximity_by is not None:
+            params['bias'] = f'proximity:{proximity_by[0]},{proximity_by[1]}'
+        if isinstance(conditions, str):
+            params['conditions'] = conditions
+        elif conditions is not None:
+            params['conditions'] = ','.join(conditions)
+
+        params['limit'] = limit
+        params['offset'] = offset
+        if language is not None:
+            params['lang'] = language
+
+        return requests.get(url=request_url, params=params, headers=self._headers).json()
 
     def place_details(self, place_id: str = None, longitude: float = None, latitude: float = None,
                       features: List[str] = None, language: str = None):
@@ -32,7 +71,7 @@ class Client:
         :param language: 2-character iso language code.
         :return: structured location details.
         """
-        request_url = self._url_place_details.format(self._api_key)
+        request_url = get_api_url(api=API_PLACE_DETAILS, api_key=self._api_key)
         params = dict()
         if place_id is not None:
             params['id'] = place_id
@@ -58,7 +97,7 @@ class Client:
         :param parameters: structured search as key value pairs and other optional parameters.
         :return: structured, geocoded, and enriched address records.
         """
-        request_url = self._url_geocode.format(self._api_key)
+        request_url = get_api_url(api=API_GEOCODE, api_key=self._api_key)
 
         params = {'text': text} if text is not None else dict()
         if parameters is not None:
@@ -73,7 +112,7 @@ class Client:
         :param longitude: float or string representing longitude.
         :return: structured, reverse geocoded, and enriched address records.
         """
-        request_url = self._url_reverse_geocode.format(self._api_key)
+        request_url = get_api_url(api=API_REVERSE_GEOCODE, api_key=self._api_key)
         params = {'lat': str(latitude), 'lon': str(longitude)}
 
         return requests.get(url=request_url, params=params, headers=self._headers).json()

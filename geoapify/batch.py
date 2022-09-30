@@ -5,24 +5,19 @@ records and ask to process each component. Processing is component-wise independ
 instead requesting for each component separately. Geoapify is able to distribute processing on its servers. You can
 use GET requests to ask if a job is completed. If it is, you can GET the results for a complete batch.
 """
-import json
 import logging
 import math
 import time
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 from threading import Lock
 from typing import List, Any, Dict, Tuple, Union
 
 import requests
 
-Json = Union[Dict[str, Any], List[Any]]
+from geoapify.utils import get_api_url, API_BATCH, API_GEOCODE, API_PLACES, API_PLACE_DETAILS, API_REVERSE_GEOCODE
 
 
 class BatchClient:
-    API_GEOCODE = '/v1/geocode/search'
-    API_REVERSE_GEOCODE = '/v1/geocode/reverse'
-    API_PLACE_DETAILS = '/v2/place-details'
 
     def __init__(self, api_key: str):
         self._api_key = api_key
@@ -48,7 +43,7 @@ class BatchClient:
         """
         inputs = parse_geocoding_inputs(locations=locations)
         result_urls = self.post_batch_jobs_and_get_job_urls(
-            api=self.API_GEOCODE, inputs=inputs, parameters=parameters, batch_len=batch_len)
+            api=API_GEOCODE, inputs=inputs, parameters=parameters, batch_len=batch_len)
 
         sleep_time = self.get_sleep_time(number_of_items=len(inputs))
         results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
@@ -74,7 +69,7 @@ class BatchClient:
         """
         inputs = parse_geocodes(geocodes=geocodes)
         result_urls = self.post_batch_jobs_and_get_job_urls(
-            api=self.API_REVERSE_GEOCODE, inputs=inputs, parameters=parameters, batch_len=batch_len)
+            api=API_REVERSE_GEOCODE, inputs=inputs, parameters=parameters, batch_len=batch_len)
 
         sleep_time = self.get_sleep_time(number_of_items=len(inputs))
         results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
@@ -83,6 +78,28 @@ class BatchClient:
             return [res['result']['results'][0] for res in results]
         else:
             return results
+
+    def places(self, individual_parameters: List[dict], parameters: dict = None, batch_len: int = 1000) -> List[dict]:
+        """Returns batch places results as a list of dictionaries.
+
+        Every Places call is defined by a set of parameters. See the Geoapify API docs to get an overview. In the
+        batch version, we can provide those parameters in two arguments. `individual_parameters` is a list of
+        dictionaries, one per call, which defines parameters applicable to individual calls. The `parameters` dictionary
+        applies to all calls of the batch.
+
+        :param individual_parameters: one dictionary per Places call.
+        :param parameters: one dictionary with common parameters for all calls.
+        :param batch_len: split calls into chunks of maximal size batch_len for parallel processing.
+        :return: list of structured Places responses.
+        """
+        inputs = [{'params': params} for params in individual_parameters]
+        result_urls = self.post_batch_jobs_and_get_job_urls(
+            api=API_PLACES, inputs=inputs, parameters=parameters, batch_len=batch_len)
+
+        sleep_time = self.get_sleep_time(number_of_items=len(inputs))
+        results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
+
+        return results
 
     def place_details(self, place_ids: List[str] = None,
                       geocodes: List[Union[Tuple[float, float], Dict[str, float]]] = None,
@@ -118,7 +135,7 @@ class BatchClient:
             params['lang'] = language
 
         result_urls = self.post_batch_jobs_and_get_job_urls(
-            api=self.API_PLACE_DETAILS, inputs=inputs, parameters=params, batch_len=batch_len)
+            api=API_PLACE_DETAILS, inputs=inputs, parameters=params, batch_len=batch_len)
 
         sleep_time = self.get_sleep_time(number_of_items=len(inputs))
         results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
@@ -166,8 +183,7 @@ class BatchClient:
             }
             try:
                 response = requests.post(
-                    'https://api.geoapify.com/v1/batch?apiKey={}'.format(self._api_key), json=data,
-                    headers=self._headers)
+                    get_api_url(api=API_BATCH, api_key=self._api_key), json=data, headers=self._headers)
             except requests.exceptions.RequestException as e:
                 raise SystemExit(e)
             if response.status_code not in (200, 202):
@@ -205,6 +221,7 @@ class BatchClient:
         job_id = url.split('&apiKey')[0]
         while True:
             response = requests.get(url, headers=self._headers).json()
+            print(response)
             try:
                 _ = response['results']
                 with self._lock:
@@ -263,30 +280,3 @@ def parse_geocodes(geocodes: List[Union[Tuple[float, float], Dict[str, float]]])
         return [{'params': val} for val in geocodes]
     else:
         raise ValueError('Format of \'geocodes\' not supported.')
-
-
-def read_data_from_json_file(file_path: Union[str, Path]) -> Json:
-    """Reads data from a JSON file.
-
-    Json = Union[Dict[str, Any], List[Any]] is a superset of the JSON specification, excluding scalar objects.
-
-    :param file_path: path to the JSON file.
-    :return: the Python equivalent of the JSON object.
-    """
-    with open(Path(file_path), 'r') as f:
-        data = json.load(fp=f)
-    logging.info(f'File \'{file_path}\' read from disk.')
-    return data
-
-
-def write_data_to_json_file(data: Json, file_path: Union[str, Path]) -> None:
-    """Writes data to a JSON file.
-
-    Json = Union[Dict[str, Any], List[Any]] is a superset of the JSON specification, excluding scalar objects.
-
-    :param data: an object of Json type.
-    :param file_path: destination path of the JSON file.
-    """
-    with open(Path(file_path), 'w') as f:
-        json.dump(data, fp=f, indent=4)
-    logging.info(f'File \'{file_path}\' written to disk.')
