@@ -39,7 +39,7 @@ class BatchClient:
             locations: locations in a supported format as validated in parse_geocoding_inputs.
             batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
             parameters: optional parameters as key value pairs that apply to all locations. See the Geoapify docs.
-            simplify_output: if True, the output will be provided in a slightly simplified format.
+            simplify_output: if True, returns output in simplified format, including only top match per address.
 
         Returns:
             List of structured, geocoded, and enriched address records.
@@ -52,7 +52,9 @@ class BatchClient:
         results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
 
         if simplify_output:
-            return [{**res['result']['results'][0], 'query': res['result']['query']} for res in results]
+            return [{**res['result']['results'][0], 'query': res['result']['query']} if 'results' in res['result'] else
+                    {**res['result'], 'query': res['params']['text']}
+                    for res in results]
         else:
             return results
 
@@ -201,8 +203,10 @@ class BatchClient:
                     get_api_url(api=API_BATCH, api_key=self._api_key), json=data, headers=self._headers)
             except requests.exceptions.RequestException as e:
                 raise SystemExit(e)
-            if response.status_code not in (200, 202):
-                raise ValueError(f'The service failed to create the job for batch {i}' +
+            if response.status_code == 401:
+                raise ValueError(response.content)
+            elif response.status_code not in (200, 202):
+                raise ValueError(f'Service responded with {response.content} - failed to create the job for batch {i}' +
                                  f' - check input range {i * batch_len}:{min((i + 1) * batch_len, len(inputs))}.')
             url = response.json()['url']
             result_urls.append(url)
