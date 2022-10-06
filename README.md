@@ -1,7 +1,13 @@
-# Python client for the Geoapify API data services
+# A CLI and Python Client for Geoapify
 
-This client is in active development. We just started, with a few specific use cases in mind. This explains why some
-Geoapify endpoints are covered already, others are not. But we actively work on getting all covered soon.
+Top arguments why you should be using Geoapify and our package:
+- You need to (reverse) geocode large numbers of locations.
+- You support open source - Geoapify is powered by the OpenStreetMap ecosystem and data.
+- The license must support commercial use without restrictions.
+- You want to do this for 6k locations per day for free, or for many for a very fair price.
+- You prefer Python or a CLI.
+
+Documentation: [geoapify.readthedocs.io](https://geoapify.readthedocs.io/en/latest/)
 
 ## How to install
 
@@ -14,7 +20,7 @@ pip install geoapify
 or directly from the current master branch if you need to try any features not yet published:
 
 ```shell
-pip install git+https://github.com/kinsvater/geoapify.git
+pip install git+https://github.com/huels-originals/geoapify.git
 ```
 
 ## Examples
