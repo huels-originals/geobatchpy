@@ -76,12 +76,13 @@ def post_batch_jobs(path_data_in, path_data_out, api_key):
     data_in = read_data_from_json_file(file_path=path_data_in)
     client = Client(api_key=get_api_key(api_key=api_key))
     result_urls = client.batch.post_batch_jobs_and_get_job_urls(
-        api=data_in['api'], inputs=data_in['inputs'], parameters=data_in.get('params'), batch_len=data_in.get('batch_len'))
+        api=data_in['api'], inputs=data_in['inputs'], parameters=data_in.get('params'),
+        batch_len=data_in.get('batch_len'))
 
     data_out = {
         'id': str(uuid4()),
         'api': data_in['api'],
-        'result_urls': result_urls,
+        'result_urls': [url.split('&apiKey=')[0] for url in result_urls],
         'sleep_time': client.batch.get_sleep_time(number_of_items=len(data_in['inputs'])),
         'data_input_id': data_in.get('id'),
         'dt_created': str(datetime.now())
@@ -114,10 +115,11 @@ def monitor_batch_jobs(path_data_in, path_data_out, api_key):
         path_data_out: destination of the JSON output file.
         api_key: if not set, will be read from the GEOAPIFY_KEY environment variable.
     """
+    api_key = get_api_key(api_key=api_key)
     data_in = read_data_from_json_file(file_path=path_data_in)
-    client = Client(api_key=get_api_key(api_key=api_key))
+    client = Client(api_key=api_key)
     results = client.batch.monitor_batch_jobs_and_get_results(
-        result_urls=data_in['result_urls'], sleep_time=data_in['sleep_time'])
+        result_urls=[url + f'&apiKey={api_key}' for url in data_in['result_urls']], sleep_time=data_in['sleep_time'])
 
     data_out = {
         'id': str(uuid4()),

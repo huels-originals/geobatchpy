@@ -243,7 +243,6 @@ class BatchClient:
         job_id = url.split('&apiKey')[0]
         while True:
             response = requests.get(url, headers=self._headers).json()
-            print(response)
             try:
                 _ = response['results']
                 with self._lock:
