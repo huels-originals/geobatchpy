@@ -1,3 +1,6 @@
+"""Python client for Geoapify
+
+"""
 import logging
 import warnings
 from typing import Dict, List, Tuple, Union

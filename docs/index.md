@@ -1,4 +1,4 @@
-# A Python Client for the Geoapify API
+# A CLI and Python Client for Geoapify
 
 You need to batch (reverse) geocode/enrich with details large numbers of address records, and do you prefer to do so in
 Python? Then this documentation is the right place to start with. You look for something related yet other than what
