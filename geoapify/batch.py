@@ -52,7 +52,8 @@ class BatchClient:
         results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
 
         if simplify_output:
-            return [{**res['result']['results'][0], 'query': res['result']['query']} if 'results' in res['result'] else
+            return [{**res['result']['results'][0], 'query': res['result']['query']}
+                    if 'results' in res['result'] and len(res['result']['results']) > 0 else
                     {**res['result'], 'query': res['params']['text']}
                     for res in results]
         else:
