@@ -31,12 +31,16 @@ copyright: >
 plugins:
   - search
   - mkdocstrings
+  - mkdocs-jupyter
 repo_url: https://github.com/kinsvater/geoapify
 repo_name: kinsvater/geoapify
 nav:
   - Home: index.md
   - Install: install.md
-  - Examples: example.md
+  - Tutorials:
+    - example-toy.md
+    - example-batch.md
+    - tutorial-enrich-locations.ipynb
   - API:
     - ref-client.md
     - ref-batch.md

@@ -1,8 +1,8 @@
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Union, Dict, Any, List
-
 
 API_GEOCODE = '/v1/geocode/search'
 API_REVERSE_GEOCODE = '/v1/geocode/reverse'
@@ -11,6 +11,25 @@ API_PLACES = '/v2/places'
 API_BATCH = '/v1/batch'
 
 Json = Union[Dict[str, Any], List[Any]]  # A superset of the JSON specification, excluding atomic objects
+
+
+def get_api_key(api_key: str = None, env_variable_name: str = 'GEOAPIFY_KEY') -> str:
+    """Simply passes the first argument if not None else returns value of environment variable.
+
+    Args:
+        api_key: API key or None.
+        env_variable_name: If api_key is None, returns instead the value of the environment variable.
+
+    Returns:
+        API key as a string.
+    """
+    if api_key is None:
+        try:
+            api_key = os.environ[env_variable_name]
+        except KeyError:
+            logging.error(f'Set the --key option or set the key in the \'{env_variable_name}\' environment variable.')
+            raise
+    return api_key
 
 
 def get_api_url(api: str, api_key: str, version: int = None) -> str:

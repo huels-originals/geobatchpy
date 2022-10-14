@@ -1,12 +1,11 @@
 import logging
-import os
 from datetime import datetime
 from uuid import uuid4
 
 import click
 
 from geoapify import Client, __version__
-from geoapify.utils import read_data_from_json_file, write_data_to_json_file
+from geoapify.utils import read_data_from_json_file, write_data_to_json_file, get_api_key
 
 logging.basicConfig(
     level=logging.INFO, datefmt='%H:%M:%S',
@@ -16,16 +15,6 @@ logging.basicConfig(
 CONTEXT_SETTINGS = {
     'help_option_names': ['-h', '--help']
 }
-
-
-def get_api_key(api_key: str = None) -> str:
-    if api_key is None:
-        try:
-            api_key = os.environ['GEOAPIFY_KEY']
-        except KeyError:
-            logging.error('Set the --key option or set the key in the \'GEOAPIFY_KEY\' environment variable.')
-            raise
-    return api_key
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)

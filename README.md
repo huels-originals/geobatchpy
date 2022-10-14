@@ -1,38 +1,39 @@
 # A CLI and Python Client for Geoapify
 
-Top arguments why you should be using Geoapify and our package:
-- You need to (reverse) geocode large numbers of locations.
-- You support open source - Geoapify is powered by the OpenStreetMap ecosystem and data.
+We have been using Geoapify to **geocode millions of location records** for data validation and analytics. We built
+this package to make this process comfortable using Python and the command line.
+
+Why Geoapify and this package may also be a good fit for you:
+
+- You need to batch process large numbers of location records (geocode, reverse geocode, places & details).
 - The license must support commercial use without restrictions.
-- You want to do this for 6k locations per day for free, or for many for a very fair price.
-- You prefer Python or a CLI.
+- It needs to be cheap (or even for free if you don't need more than 6k addresses per day).
 
-Documentation: [geoapify.readthedocs.io](https://geoapify.readthedocs.io/en/latest/)
+Sign up at [geoapify.com](https://geoapify.com/) and start with their free plan of 3k credits per day which translates
+to up to 6k address geocodings.
 
-## How to install
+## Install our package with `pip`
 
-Install the latest release from public PyPI by
+This package is available on the public PyPI:
 
 ```shell
 pip install geoapify
 ```
 
-or directly from the current master branch if you need to try any features not yet published:
-
-```shell
-pip install git+https://github.com/huels-originals/geoapify.git
-```
-
 ## Examples
 
-### Batch geocoding example
+See our documentation at [geoapify.readthedocs.io](https://geoapify.readthedocs.io/en/latest/) for a growing number of
+comprehensive example use cases. Below we illustrate both, the Python API and the CLI, for a tiny batch geocoding
+example.
+
+### A simple batch geocoding example using the Python API
 
 Below we geocode multiple addresses in a single batch. There are two ways how we can provide the location data as input.
-Either we use a list of strings, one string per address. These are then taken as free text searches. Or we provide a
-structured input by specifying attributes of every address in a dictionary. See the
+Either we use a list of strings, one string per address. These are then taken as free text searches. Or we provide
+structured input as a list of dictionaries, again one per address. See the
 [Geoapify API documentation](https://apidocs.geoapify.com/) for a complete list of address attributes accepted by the
-geocoding services. In both ways, we can also provide structured attributes as optional `parameters`. E.g., below we
-asked for results in French.
+geocoding services. Use the optional `parameters` dictionary if all your addresses have an attribute in common. E.g.,
+below we request results in French.
 
 ```python
 from geoapify import Client
@@ -104,22 +105,17 @@ addresses = [{'city': 'Krefeld', 'street': 'Hülser Markt', 'housenumber': 1, 'p
 }
 ```
 
-### Use the `geoapify` CLI for large jobs
+### The same batch geocoding example using the CLI
 
-This packages comes with the `geoapify` command line interface. It is useful for executing batch jobs as a daemon or
-with little overhead in a terminal.
+We built the `geoapify` command line interface to make batch processing large numbers of records more comfortable.
 
-Before we start, we need to first create a JSON file to store all the inputs. See the
-`geoapify.batch.parse_*` functions to bring your inputs into the right format and check the docstrings of
-the CLI:
-
-```shell
-geoapify post-batch-jobs --help
-```
-
-See the following example how to generate a JSON input file for the batch geocoding service using Python:
+Steps:
+1. Prepare a JSON file as input.
+2. Use `geoapify post-batch-jobs` to submit one or more jobs to the Geoapify servers.
+3. Use `geoapify monitor-batch-jobs` for monitoring progress and data retrieval.
 
 ```python
+# Step 1 - written in Python:
 from geoapify.batch import parse_geocoding_inputs
 from geoapify.utils import write_data_to_json_file
 
@@ -134,167 +130,25 @@ data = {
     'id': 'my-batch-geocoding-job'  # optional - a reference which will be reused in the output file
 }
 
-write_data_to_json_file(data=data, file_path='<path-data-in>')  # use as input for post-batch-jobs
+write_data_to_json_file(data=data, file_path='<path-data-in>')
 ```
 
-Assuming, we have created such data for input, we can post batch processing jobs by
+The following command submits one or more jobs and stores job URLs to disk. Those URLs are required to monitor
+and retrieve results.
 
 ```shell
 geoapify post-batch-jobs <path-data-in> <path-post-data-out> --api-key <your-key>
 ```
 
-You can omit the `--api-key` option if you set your `GEOAPIFY_KEY` environment variable. 
-
-The `post-batch-jobs` should finish rather quickly. Next we can start monitoring progress now or anytime later:
+You can omit the `--api-key` option if you set the `GEOAPIFY_KEY` environment variable. Next we start monitoring
+progress:
 
 ```shell
 geoapify monitor-batch-jobs <path-post-data-out> <path-results-data-out> --api-key <your-key>
 ```
 
-This will monitor the progress of all batch jobs and store results to disk when they all finish. You can abort
-this step any time and restart later - provided the jobs still are in cache of the Geoapify servers.
-
-### Place Details example
-
-There is also a batch version of the Place Details API. Below we use the single location version and choose
-two different kinds of features in our request. There are many more kinds of features - see the Geoapify docs. But
-note that not every location is covered by every kind of feature.
-
-```python
-from geoapify import Client
-
-client = Client(api_key='<your-api-key>')
-
-res = client.place_details(latitude=50.8512746, longitude=4.3649087,  # or use place_id (also in geocoding results)
-                           features=['details', 'building'])  # defaults to just the 'details' if not specified
-res['features']
-```
-
-```python
-[
-    {
-        "type": "Feature",
-        "properties": {
-            "feature_type": "details",
-            "name": "Kruppstraße",
-            "restrictions": {"max_speed": 30},
-            "categories": ["highway", "highway.residential"],
-            "datasource": {
-                "sourcename": "openstreetmap",
-                "attribution": "© OpenStreetMap contributors",
-                "license": "Open Database Licence",
-                "url": "https://www.openstreetmap.org/copyright",
-                "raw": {
-                    "lit": "yes",
-                    "name": "Kruppstraße",
-                    "oneway": "yes",
-                    "osm_id": 256731283,
-                    "highway": "residential",
-                    "surface": "asphalt",
-                    "z_order": 330,
-                    "maxspeed": 30,
-                    "osm_type": "w",
-                    "sidewalk": "right",
-                    "postal_code": 45128,
-                    "lane_markings": "no",
-                    "sidewalk:right:surface": "paving_stones",
-                },
-            },
-            "street": "Kruppstraße",
-            "city": "Essen",
-            "state": "North Rhine-Westphalia",
-            "postcode": "45128",
-            "country": "Germany",
-            "country_code": "de",
-            "formatted": "Kruppstraße, 45128 Essen, Germany",
-            "address_line1": "Kruppstraße",
-            "address_line2": "45128 Essen, Germany",
-            "lat": 51.4500523,
-            "lon": 7.0093601,
-            "place_id": "515b17c8fd580a1c40594bde458c9eb94940f00102f90193684d0f0000000092030c4b7275707073747261c39f65",
-        },
-        "geometry": {
-            "type": "LineString",
-            "coordinates": [[7.0108501, 51.450249699], [7.0093601, 51.450052299]],
-        },
-    },
-    {
-        "type": "Feature",
-        "properties": {
-            "feature_type": "building",
-            "categories": ["building", "building.office", "office", "office.company"],
-            "datasource": {
-                "sourcename": "openstreetmap",
-                "attribution": "© OpenStreetMap contributors",
-                "license": "Open Database Licence",
-                "url": "https://www.openstreetmap.org/copyright",
-                "raw": {
-                    "name": "DB Schenker",
-                    "office": "company",
-                    "osm_id": -7407547,
-                    "building": "office",
-                    "osm_type": "r",
-                    "wikidata": "Q474287",
-                    "addr:city": "Essen",
-                    "wikipedia": "de:Schenker AG",
-                    "roof:shape": "flat",
-                    "addr:street": "Kruppstraße",
-                    "roof:colour": "black",
-                    "addr:country": "DE",
-                    "addr:postcode": 45128,
-                    "roof:material": "tar_paper",
-                    "building:colour": "black",
-                    "building:levels": 6,
-                    "addr:housenumber": 4,
-                    "building:material": "metal",
-                },
-            },
-            "housenumber": "4",
-            "street": "Kruppstraße",
-            "city": "Essen",
-            "state": "North Rhine-Westphalia",
-            "postcode": "45128",
-            "country": "Germany",
-            "country_code": "de",
-            "formatted": "DB Schenker, Kruppstraße 4, 45128 Essen, Germany",
-            "address_line1": "DB Schenker",
-            "address_line2": "Kruppstraße 4, 45128 Essen, Germany",
-            "lat": 51.4503917,
-            "lon": 7.010418352964237,
-            "name": "DB Schenker",
-            "wiki_and_media": {"wikidata": "Q474287", "wikipedia": "de:Schenker AG"},
-            "building": {
-                "levels": 6,
-                "type": "office",
-                "material": "metal",
-                "color": "black",
-                "roof": {"shape": "flat", "color": "black"},
-            },
-            "area": 2622,
-            "place_id": "51b6ee06a1420a1c40591c45b8dea6b94940f00101f901bb0771000000000092030b444220536368656e6b6572",
-        },
-        "geometry": {
-            "type": "Polygon",
-            "coordinates": [
-                [
-                    [7.0093446, 51.450494299],
-                    [7.0093605, 51.450446299],
-                    [7.0093658, 51.450437399],
-                    # many more coordinates
-                    [7.0093446, 51.450494299],
-                ],
-                [
-                    [7.0098872, 51.450365899],
-                    [7.0098989, 51.450384999],
-                    [7.0099838, 51.450464199],
-                    # many more coordinates
-                    [7.0098872, 51.450365899],
-                ],
-            ],
-        },
-    },
-]
-```
+We can abort the monitoring at any time and restart later - provided the jobs still are in the cache of
+Geoapify servers.
 
 ## References and further reading
 

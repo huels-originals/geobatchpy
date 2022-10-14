@@ -14,7 +14,7 @@ from typing import List, Any, Dict, Tuple, Union
 
 import requests
 
-from geoapify.utils import get_api_url, API_BATCH, API_GEOCODE, API_PLACES, API_PLACE_DETAILS, API_REVERSE_GEOCODE
+from geoapify.utils import API_BATCH, API_GEOCODE, API_PLACES, API_PLACE_DETAILS, API_REVERSE_GEOCODE, get_api_url
 
 
 class BatchClient:
@@ -35,6 +35,12 @@ class BatchClient:
         batches, and the level of your geoapify.com subscription. In such a case, it may make more sense to store
         the job URLs to disk, stop there, and continue later with monitor_batch_jobs_and_get_results.
 
+        Note: as of this writing, you need to use parameters={'format': 'geojson'} to get results back that are
+        consistent with the standard single-location geocoding endpoint. We have not made it a default for the
+        batch version here to be consistent with Geoapify. But we strongly recommend to use GeoJSON.
+        See https://geojson.org/ for the GeoJSON specification and check the third party package geopandas to learn how
+        to parse such objects for efficient analytics.
+
         Arguments:
             locations: locations in a supported format as validated in parse_geocoding_inputs.
             batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
@@ -52,10 +58,8 @@ class BatchClient:
         results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
 
         if simplify_output:
-            return [{**res['result']['results'][0], 'query': res['result']['query']}
-                    if 'results' in res['result'] and len(res['result']['results']) > 0 else
-                    {**res['result'], 'query': res['params']['text']}
-                    for res in results]
+            input_format = 'json' if parameters.get('format') is None else parameters['format']
+            return simplify_batch_geocoding_results(results=results, input_format=input_format)
         else:
             return results
 
@@ -66,6 +70,12 @@ class BatchClient:
         Note: this whole process may take long time (hours), depending on the size of the input, the number of
         batches, and the level of your geoapify.com subscription. In such a case, it may make more sense to store
         the job URLs to disk, stop there, and continue later with monitor_batch_jobs_and_get_results.
+
+        Note: as of this writing, you need to use parameters={'format': 'geojson'} to get results back that are
+        consistent with the standard single-location geocoding endpoint. We have not made it a default for the
+        batch version here to be consistent with Geoapify. But we strongly recommend to use GeoJSON.
+        See https://geojson.org/ for the GeoJSON specification and check the third party package geopandas to learn how
+        to parse such objects for efficient analytics.
 
         Arguments:
             geocodes: list of geocodes as supported by self.parse_geocodes.
@@ -316,3 +326,58 @@ def parse_geocodes(geocodes: List[Union[Tuple[float, float], Dict[str, float]]])
         return [{'params': val} for val in geocodes]
     else:
         raise ValueError('Format of \'geocodes\' not supported.')
+
+
+def simplify_batch_geocoding_results(results: List[dict], input_format: str) -> List[dict]:
+    """Simplifies the output of a batch geocoding response.
+
+    This function takes the rather verbose response of the batch geocoding service as input and returns a more
+    lightweight version, preserving the most relevant information. Try pandas.json_normalize on the output to
+    see how easy it becomes to convert the JSON into a data table.
+
+    Args:
+        results: Dictionary of results as returned by Client.batch.geocode.
+        input_format: Either 'json' (default) or 'geojson'. See the Geoapify API docs, geocoding, parameter `format`.
+
+    Returns:
+        A lightweight, reshaped version of the original results.
+    """
+    if input_format == 'json':
+        inner_name = 'results'
+    elif input_format == 'geojson':
+        inner_name = 'features'
+    else:
+        raise ValueError(f'Argument \'input_format={input_format}\' not supported - use one of \'json\', \'geojson\'.')
+
+    return [{**res['result'][inner_name][0], 'query': res['result']['query']}
+            if inner_name in res['result'] and len(res['result'][inner_name]) > 0 else
+            {**res['result'], 'query': res['params']['text']}
+            for res in results]
+
+
+def simplify_batch_place_details_results(results: List[dict]) -> List[List[dict]]:
+    """Simplifies the output of a batch place details response to a list of lists of GeoJSON feature-like dicts.
+
+    The batch Place Details API takes as input locations plus feature types, and responds with Place details
+    for every combination of the two inputs, provided there is a match.
+
+    This function parses the rather verbose `results` object and parses it into a more lightweight list of lists of
+    dictionaries.
+
+    - A single element of the outer list corresponds to a single location.
+    - A single element of the inner list corresponds to a single feature type of a single location.
+    - Every such innermost element is a Python dictionary which effectively is a GeoJSON feature.
+
+    See https://geojson.org/ for a specification of the GeoJSON format. For you that means, you can use third party
+    packages like geopandas and shapely to parse the output of this function and analyze these objects with
+    sophisticated opensource packages for geographic data science.
+
+    Args:
+        results: Dictionary of results as returned by Client.batch.place_details.
+
+    Returns:
+        A lightweight, reshaped version of the original results.
+    """
+    return [res['result']['features']
+            if 'features' in res['result'] and len(res['result']['features']) > 0 else []
+            for res in results]
