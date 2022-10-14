@@ -39,7 +39,6 @@ nav:
   - Install: install.md
   - Tutorials:
     - example-toy.md
-    - example-batch.md
     - tutorial-enrich-locations.ipynb
   - API:
     - ref-client.md
