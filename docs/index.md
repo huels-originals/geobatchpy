@@ -1,9 +1,13 @@
 # A CLI and Python Client for Geoapify
 
-You need to batch (reverse) geocode/enrich with details large numbers of address records, and do you prefer to do so in
-Python? Then this documentation is the right place to start with. You look for something related yet other than what
-we mentioned? Check the [Geoapify's API docs](https://apidocs.geoapify.com/#docs) and if the endpoint is not covered yet
-by our Python client, it will be soon (hopefully). 
+We have been using Geoapify to **geocode millions of location records** for data validation and analytics. We built
+this package to make this process comfortable using Python and the command line.
 
-Before you start, [sign up at geoapify.com](https://www.geoapify.com/) to generate your personal API key with a free
-tier of 3000 credits (e.g., = 6000 address geocodings per day).
+Why Geoapify and this package may also be a good fit for you:
+
+- You need to batch process large numbers of location records (geocode, reverse geocode, places & details).
+- The license must support commercial use without restrictions.
+- It needs to be cheap (or even for free if you don't need more than 6k addresses per day).
+
+Sign up at [geoapify.com](https://geoapify.com/) and start with their free plan of 3k credits per day which translates
+to up to 6k address geocodings.
