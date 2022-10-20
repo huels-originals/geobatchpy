@@ -9,6 +9,7 @@ API_REVERSE_GEOCODE = '/v1/geocode/reverse'
 API_PLACE_DETAILS = '/v2/place-details'
 API_PLACES = '/v2/places'
 API_BATCH = '/v1/batch'
+API_ISOLINE = '/v1/isoline'
 
 Json = Union[Dict[str, Any], List[Any]]  # A superset of the JSON specification, excluding atomic objects
 
