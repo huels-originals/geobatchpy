@@ -8,7 +8,7 @@ from typing import Dict, List, Tuple, Union
 import requests
 
 from geoapify.batch import BatchClient
-from geoapify.utils import get_api_url, API_GEOCODE, API_REVERSE_GEOCODE, API_PLACES, API_PLACE_DETAILS
+from geoapify.utils import get_api_url, API_GEOCODE, API_REVERSE_GEOCODE, API_PLACES, API_PLACE_DETAILS, API_ISOLINE
 
 
 class Client:
@@ -122,15 +122,35 @@ class Client:
         """Returns reverse geocoding results as a dictionary.
 
         Arguments:
-            latitude: float or string representing latitude.
-            longitude: float or string representing longitude.
+            latitude: float representing latitude.
+            longitude: float representing longitude.
 
         Returns:
-            Structured, reverse geocoded, and enriched address records.
+            Structured, reverse geocoded, and enriched address record.
         """
         request_url = get_api_url(api=API_REVERSE_GEOCODE, api_key=self._api_key)
         params = {'lat': str(latitude), 'lon': str(longitude)}
 
+        return requests.get(url=request_url, params=params, headers=self._headers).json()
+
+    def isoline(self, longitude: float, latitude: float, travel_range: int,
+                travel_mode: str = 'drive', isoline_type: str = 'time', output_format: str = 'geojson') -> dict:
+        """Returns isoline results as a dictionary.
+
+        Args:
+            longitude: float representing longitude.
+            latitude: float representing latitude.
+            travel_range: either travel time in seconds or travel distance in meters, depending on `isoline_type`.
+            travel_mode: one of the many supported 'mode's - see the Geoapify API docs.
+            isoline_type: either 'time' or 'distance'.
+            output_format: one of 'geojson', 'topojson', 'geobuf'.
+
+        Returns:
+            Structured isoline details.
+        """
+        request_url = get_api_url(api=API_ISOLINE, api_key=self._api_key)
+        params = {'lon': str(longitude), 'lat': str(latitude), 'range': travel_range, 'mode': travel_mode,
+                  'type': isoline_type, 'format': output_format}
         return requests.get(url=request_url, params=params, headers=self._headers).json()
 
     def batch_geocode(self, addresses: List[str], batch_len: int = 1000,

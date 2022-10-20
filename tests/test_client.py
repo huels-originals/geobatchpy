@@ -98,6 +98,23 @@ class TestClient:
 
         assert res['features'][0]['properties']['name'] == 'DB Schenker'
 
+    def test_isoline(self, monkeypatch):
+        class MockRequestsGet:
+            def __init__(self, url, params, headers):
+                pass
+
+            @staticmethod
+            def json():
+                return RES_TEST_ISOLINE
+
+        monkeypatch.setattr(requests, 'get', MockRequestsGet)
+
+        client = Client(api_key=self.API_KEY)
+
+        res = client.isoline(longitude=7.010232, latitude=51.450216, travel_range=30*60)
+
+        assert 'geometry' in res['features'][0]
+
     def test_batch_geocode(self, monkeypatch):
         class MockRequestsPost:
             def __init__(self, request_url, json, headers):
@@ -812,6 +829,24 @@ RES_TEST_REVERSE_GEOCODE = {
             "bbox": [7.0093446, 51.4501399, 7.0106896, 51.4506423],
         }
     ],
+}
+RES_TEST_ISOLINE = {
+    "features": [
+        {
+            "properties": {
+                "lat": 51.450216,
+                "lon": 7.010232,
+                "mode": "drive",
+                "type": "time",
+                "range": 1800,
+                "id": "0ff182d6a9e5e0b28dcc1c18716e7f82",
+            },
+            "geometry": {"type": "MultiPolygon", "coordinates": []},
+            "type": "Feature",
+        }
+    ],
+    "type": "FeatureCollection",
+    "properties": {"id": "0ff182d6a9e5e0b28dcc1c18716e7f82"},
 }
 RES_TEST_BATCH_GEOCODE = [
     {

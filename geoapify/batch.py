@@ -14,7 +14,10 @@ from typing import List, Any, Dict, Tuple, Union
 
 import requests
 
-from geoapify.utils import API_BATCH, API_GEOCODE, API_PLACES, API_PLACE_DETAILS, API_REVERSE_GEOCODE, get_api_url
+from geoapify.utils import (
+    API_BATCH, API_GEOCODE, API_PLACES, API_PLACE_DETAILS, API_REVERSE_GEOCODE, API_ISOLINE,
+    get_api_url
+)
 
 
 class BatchClient:
@@ -51,11 +54,8 @@ class BatchClient:
             List of structured, geocoded, and enriched address records.
         """
         inputs = parse_geocoding_inputs(locations=locations)
-        result_urls = self.post_batch_jobs_and_get_job_urls(
-            api=API_GEOCODE, inputs=inputs, parameters=parameters, batch_len=batch_len)
 
-        sleep_time = self.get_sleep_time(number_of_items=len(inputs))
-        results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
+        results = self._batch_archetype(api=API_GEOCODE, inputs=inputs, params=parameters, batch_len=batch_len)
 
         if simplify_output:
             input_format = 'json' if parameters.get('format') is None else parameters['format']
@@ -78,7 +78,7 @@ class BatchClient:
         to parse such objects for efficient analytics.
 
         Arguments:
-            geocodes: list of geocodes as supported by self.parse_geocodes.
+            geocodes: list of input locations as geocodes with a format supported by self.parse_geocodes.
             batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
             parameters: optional parameters as dictionary. See the geoapify.com API documentation.
             simplify_output: if True, the output will be provided in a slightly simplified format.
@@ -87,11 +87,8 @@ class BatchClient:
             List of structured, reverse geocoded, and enriched address records.
         """
         inputs = parse_geocodes(geocodes=geocodes)
-        result_urls = self.post_batch_jobs_and_get_job_urls(
-            api=API_REVERSE_GEOCODE, inputs=inputs, parameters=parameters, batch_len=batch_len)
 
-        sleep_time = self.get_sleep_time(number_of_items=len(inputs))
-        results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
+        results = self._batch_archetype(api=API_REVERSE_GEOCODE, inputs=inputs, params=parameters, batch_len=batch_len)
 
         if simplify_output:
             return [res['result']['results'][0] for res in results]
@@ -115,13 +112,8 @@ class BatchClient:
             List of structured Places responses.
         """
         inputs = [{'params': params} for params in individual_parameters]
-        result_urls = self.post_batch_jobs_and_get_job_urls(
-            api=API_PLACES, inputs=inputs, parameters=parameters, batch_len=batch_len)
 
-        sleep_time = self.get_sleep_time(number_of_items=len(inputs))
-        results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
-
-        return results
+        return self._batch_archetype(api=API_PLACES, inputs=inputs, params=parameters, batch_len=batch_len)
 
     def place_details(self, place_ids: List[str] = None,
                       geocodes: List[Union[Tuple[float, float], Dict[str, float]]] = None,
@@ -138,7 +130,7 @@ class BatchClient:
 
         Arguments:
             place_ids: list of place_id values.
-            geocodes: list of geocodes as supported by self.parse_geocodes.
+            geocodes: list of input locations as geocodes with a format supported by self.parse_geocodes.
             batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
             features: list of types of details. Defaults to just ["details"] if not specified.
             language: 2-character iso language code.
@@ -159,13 +151,33 @@ class BatchClient:
         if language is not None:
             params['lang'] = language
 
-        result_urls = self.post_batch_jobs_and_get_job_urls(
-            api=API_PLACE_DETAILS, inputs=inputs, parameters=params, batch_len=batch_len)
+        return self._batch_archetype(api=API_PLACE_DETAILS, inputs=inputs, params=params, batch_len=batch_len)
 
-        sleep_time = self.get_sleep_time(number_of_items=len(inputs))
-        results = self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
+    def isoline(self, geocodes: List[Union[Tuple[float, float], Dict[str, float]]], travel_range: int,
+                travel_mode: str = 'drive', isoline_type: str = 'time', batch_len: int = 1000,
+                output_format: str = 'geojson') -> List[dict]:
+        """Returns batch isoline results as a list of dictionaries.
 
-        return results
+        Args:
+            geocodes: list of input locations as geocodes with a format supported by self.parse_geocodes.
+            travel_range: either travel time in seconds or travel distance in meters, depending on `isoline_type`.
+            travel_mode: one of the many supported 'mode's - see the Geoapify API docs.
+            isoline_type: either 'time' or 'distance'.
+            batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
+            output_format: one of 'geojson', 'topojson', 'geobuf'.
+
+        Returns:
+            List of structured isoline records.
+        """
+        inputs = parse_geocodes(geocodes=geocodes)
+        params = {
+            'type': isoline_type,
+            'mode': travel_mode,
+            'range': travel_range,
+            'format': output_format
+        }
+
+        return self._batch_archetype(api=API_ISOLINE, inputs=inputs, params=params, batch_len=batch_len)
 
     def post_batch_jobs_and_get_job_urls(self, api: str, inputs: List[Any],
                                          parameters: dict = None, batch_len: int = None) -> List[str]:
@@ -185,7 +197,7 @@ class BatchClient:
             api: name of the batch enabled API - see above.
             inputs: list of locations to be processed by batch jobs.
             parameters: optional parameters - see the Geoapify API docs.
-            batch_len: maximal size of a single batch - between 2 and 1000.
+            batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
 
         Returns:
             List of batch job URLs.
@@ -281,6 +293,24 @@ class BatchClient:
             Sleep time in seconds.
         """
         return min(300, max(3, int(number_of_items ** 0.4)))
+
+    def _batch_archetype(self, api: str, inputs: List[Any], params: dict, batch_len: int) -> List[dict]:
+        """
+
+        Args:
+            api: one of the supported endpoints - see the Geoapify API docs.
+            inputs: list of inputs, each element encoding a location.
+            params: dictionary of attributes common across all inputs.
+            batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
+
+        Returns:
+
+        """
+        result_urls = self.post_batch_jobs_and_get_job_urls(
+            api=api, inputs=inputs, parameters=params, batch_len=batch_len)
+
+        sleep_time = self.get_sleep_time(number_of_items=len(inputs))
+        return self.monitor_batch_jobs_and_get_results(sleep_time=sleep_time, result_urls=result_urls)
 
 
 def parse_geocoding_inputs(locations: List[Union[str, dict]]) -> List[dict]:
