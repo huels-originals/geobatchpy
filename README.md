@@ -1,6 +1,6 @@
-# A CLI and Python Client for Geoapify
+# A CLI and Python Client for the Geoapify API
 
-We have been using Geoapify to **geocode millions of location records** for data validation and analytics. We built
+We have been using the Geoapify API to **geocode millions of location records** for data validation and analytics. We built
 this package to make this process comfortable using Python and the command line.
 
 Why Geoapify and this package may also be a good fit for you:
@@ -17,12 +17,12 @@ to up to 6k address geocodings.
 This package is available on the public PyPI:
 
 ```shell
-pip install geoapify
+pip install geobatchpy
 ```
 
 ## Examples
 
-See our documentation at [geoapify.readthedocs.io](https://geoapify.readthedocs.io/en/latest/) for a growing number of
+See our documentation at [geobatchpy.readthedocs.io](https://geobatchpy.readthedocs.io/en/latest/) for a growing number of
 comprehensive example use cases. Below we illustrate both, the Python API and the CLI, for a tiny batch geocoding
 example.
 
@@ -36,7 +36,7 @@ geocoding services. Use the optional `parameters` dictionary if all your address
 below we request results in French.
 
 ```python
-from geoapify import Client
+from geobatchpy import Client
 
 client = Client(api_key='<your-api-key>')
 
@@ -116,8 +116,8 @@ Steps:
 
 ```python
 # Step 1 - written in Python:
-from geoapify.batch import parse_geocoding_inputs
-from geoapify.utils import write_data_to_json_file
+from geobatchpy.batch import parse_geocoding_inputs
+from geobatchpy.utils import write_data_to_json_file
 
 addresses = ['Hülser Markt 1, 47839 Krefeld',
              'DB Schenker, Essen, Germany',
@@ -137,18 +137,18 @@ The following command submits one or more jobs and stores job URLs to disk. Thos
 and retrieve results.
 
 ```shell
-geoapify post-batch-jobs <path-data-in> <path-post-data-out> --api-key <your-key>
+geobatch submit <path-data-in> <path-post-data-out> --api-key <your-key>
 ```
 
 You can omit the `--api-key` option if you set the `GEOAPIFY_KEY` environment variable. Next we start monitoring
 progress:
 
 ```shell
-geoapify monitor-batch-jobs <path-post-data-out> <path-results-data-out> --api-key <your-key>
+geobatch receive <path-post-data-out> <path-results-data-out> --api-key <your-key>
 ```
 
 We can abort the monitoring at any time and restart later - provided the jobs still are in the cache of
-Geoapify servers.
+Geoapify servers (24 hours).
 
 ## References and further reading
 

@@ -1,6 +1,6 @@
 # CLI
 
 ::: mkdocs-click
-    :module: geoapify.cli
+    :module: geobatchpy.cli
     :command: main
-    :prog_name: geoapify
+    :prog_name: geobatch

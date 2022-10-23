@@ -1,3 +1,3 @@
 # Utils module
 
-::: geoapify.utils
+::: geobatchpy.utils

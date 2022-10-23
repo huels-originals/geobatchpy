@@ -1,3 +1,3 @@
 # Batch module
 
-::: geoapify.batch
+::: geobatchpy.batch

@@ -10,7 +10,7 @@ geocoding services. Use the optional `parameters` dictionary if all your address
 below we request results in French.
 
 ```python
-from geoapify import Client
+from geobatchpy import Client
 
 client = Client(api_key='<your-api-key>')
 
@@ -89,8 +89,8 @@ Steps:
 
 ```python
 # Step 1 - written in Python:
-from geoapify.batch import parse_geocoding_inputs
-from geoapify.utils import write_data_to_json_file
+from geobatchpy.batch import parse_geocoding_inputs
+from geobatchpy.utils import write_data_to_json_file
 
 addresses = ['Hülser Markt 1, 47839 Krefeld',
              'DB Schenker, Essen, Germany',
@@ -435,7 +435,7 @@ two different kinds of features in our request. There are many more kinds of fea
 note that not every location is covered by every kind of feature.
 
 ```python
-from geoapify import Client
+from geobatchpy import Client
 
 client = Client(api_key='<your-api-key>')
 

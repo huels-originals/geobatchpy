@@ -1,6 +1,6 @@
-# A CLI and Python Client for Geoapify
+# A CLI and Python Client for the Geoapify API
 
-We have been using Geoapify to **geocode millions of location records** for data validation and analytics. We built
+We have been using the Geoapify API to **geocode millions of location records** for data validation and analytics. We built
 this package to make this process comfortable using Python and the command line.
 
 Why Geoapify and this package may also be a good fit for you:

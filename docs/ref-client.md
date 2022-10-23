@@ -1,6 +1,6 @@
 # Client module
 
-::: geoapify.client.Client
+::: geobatchpy.client.Client
     options:
       members:
         - __init__

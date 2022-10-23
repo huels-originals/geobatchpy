@@ -2,22 +2,22 @@
 
 ## Install the package into your active environment
 
-Install the latest release from public [PyPI](https://pypi.org/project/geoapify/):
+Install the latest release from public [PyPI](https://pypi.org/project/geobatchpy/):
 
 ```shell
-pip install geoapify
+pip install geobatchpy
 ```
 
 Append a `==<version>` if you prefer an older release. Or install the latest development state from the master branch:
 
 ```shell
-pip install git+https://github.com/huels-originals/geoapify.git
+pip install git+https://github.com/huels-originals/geobatchpy.git
 ```
 
-Version 0.1.2 and upwards are shipped with a command line interface. Verify the installation on the command line with
+This package comes with a command line interface named `geobatch`. Verify the installation on the command line with
 
 ```shell
-geoapify version
+geobatch version
 ```
 
 ## Install the latest release into a Conda virtual environment
@@ -29,14 +29,14 @@ Assuming you have installed the `conda` command, create a file called `environme
 
 ```
 # your environment.yaml
-name: geoapify-env  # pick any name you like
+name: my-env  # pick any name you like
 channels:
   - defaults
 dependencies:
   - python=3.9
   - pip
   - pip:
-      - geoapify
+      - geobatchpy
       # Add optional dependencies below, e.g.:
       - geopandas
 ```
@@ -50,9 +50,9 @@ conda env create -f environment.yaml
 Wait for the installation to complete and activate the environment by
 
 ```shell
-conda activate geoapify-env
+conda activate my-env
 ```
-You can verify the installation by printing the installed version with `geoapify version`. If you are done, deactivate the environment
+You can verify the installation by printing the installed version with `geobatch version`. If you are done, deactivate the environment
 with `conda deactivate`.
 
 See the official documentation if you want to know more about
