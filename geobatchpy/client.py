@@ -7,8 +7,8 @@ from typing import Dict, List, Tuple, Union
 
 import requests
 
-from geoapify.batch import BatchClient
-from geoapify.utils import get_api_url, API_GEOCODE, API_REVERSE_GEOCODE, API_PLACES, API_PLACE_DETAILS, API_ISOLINE
+from geobatchpy.batch import BatchClient
+from geobatchpy.utils import get_api_url, API_GEOCODE, API_REVERSE_GEOCODE, API_PLACES, API_PLACE_DETAILS, API_ISOLINE
 
 
 class Client:
