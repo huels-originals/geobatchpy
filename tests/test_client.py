@@ -2,7 +2,7 @@ import logging
 
 import requests
 
-from geoapify.client import Client
+from geobatchpy.client import Client
 
 logging.basicConfig(level=logging.DEBUG)
 

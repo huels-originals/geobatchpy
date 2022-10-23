@@ -14,7 +14,7 @@ from typing import List, Any, Dict, Tuple, Union
 
 import requests
 
-from geoapify.utils import (
+from geobatchpy.utils import (
     API_BATCH, API_GEOCODE, API_PLACES, API_PLACE_DETAILS, API_REVERSE_GEOCODE, API_ISOLINE,
     get_api_url
 )

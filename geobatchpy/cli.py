@@ -4,8 +4,8 @@ from uuid import uuid4
 
 import click
 
-from geoapify import Client, __version__
-from geoapify.utils import read_data_from_json_file, write_data_to_json_file, get_api_key
+from geobatchpy import Client, __version__
+from geobatchpy.utils import read_data_from_json_file, write_data_to_json_file, get_api_key
 
 logging.basicConfig(
     level=logging.INFO, datefmt='%H:%M:%S',
