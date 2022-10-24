@@ -39,7 +39,7 @@ def version():
 @click.argument('path_data_in', type=click.Path(exists=True))
 @click.argument('path_data_out', type=click.Path())
 @click.option('-k', '--api-key', default=None)
-def post_batch_jobs(path_data_in, path_data_out, api_key):
+def submit(path_data_in, path_data_out, api_key):
     """Post batch jobs and store result urls.
 
     \b
@@ -83,7 +83,7 @@ def post_batch_jobs(path_data_in, path_data_out, api_key):
 @click.argument('path_data_in', type=click.Path(exists=True))
 @click.argument('path_data_out', type=click.Path())
 @click.option('-k', '--api-key', default=None)
-def monitor_batch_jobs(path_data_in, path_data_out, api_key):
+def receive(path_data_in, path_data_out, api_key):
     """Monitor jobs and store results.
 
     \b
