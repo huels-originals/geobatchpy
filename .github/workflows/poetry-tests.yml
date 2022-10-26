@@ -25,5 +25,7 @@ jobs:
         uses: abatilo/actions-poetry@v2
         with:
           poetry-version: ${{ matrix.poetry-version }}
+      - name: Install dependenices
+        run: poetry install --no-interaction --no-root
       - name: Run pytest
         run: poetry run pytest
