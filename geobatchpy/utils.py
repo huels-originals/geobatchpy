@@ -33,13 +33,15 @@ def get_api_key(api_key: str = None, env_variable_name: str = 'GEOAPIFY_KEY') ->
     return api_key
 
 
-def get_api_url(api: str, api_key: str, version: int = None) -> str:
-    url = f'https://api.geoapify.com{api}?apiKey={api_key}'
+def get_api_url(api: str, api_key: str = None, version: int = None) -> str:
+    if api_key is None:
+        api_key = get_api_key()
     if version is None:
         # Use version as defined above
-        return url
+        return f'https://api.geoapify.com{api}?apiKey={api_key}'
     else:
-        return url.replace('/v2/', f'/v{version}/')
+        api = f'/v{version}/' + api.split('/')[-1]
+        return f'https://api.geoapify.com{api}?apiKey={api_key}'
 
 
 def read_data_from_json_file(file_path: Union[str, Path]) -> Json:
