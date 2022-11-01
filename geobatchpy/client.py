@@ -1,21 +1,24 @@
-"""Python client for Geoapify
+"""A Python client for the Geoapify API.
 
 """
 import logging
-import warnings
 from typing import Dict, List, Tuple, Union
 
 import requests
 
 from geobatchpy.batch import BatchClient
-from geobatchpy.utils import get_api_url, API_GEOCODE, API_REVERSE_GEOCODE, API_PLACES, API_PLACE_DETAILS, API_ISOLINE
+from geobatchpy.boundaries import BoundariesClient
+from geobatchpy.utils import (
+    get_api_key, get_api_url, API_GEOCODE, API_REVERSE_GEOCODE, API_PLACES, API_PLACE_DETAILS, API_ISOLINE
+)
 
 
 class Client:
 
     def __init__(self, api_key: str):
-        self._api_key = api_key
+        self._api_key = get_api_key(api_key=api_key)
         self.batch = BatchClient(api_key=api_key)
+        self.boundaries = BoundariesClient(api_key=api_key)
         self._headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         self._logger = logging.getLogger(__name__)
 
@@ -152,41 +155,3 @@ class Client:
         params = {'lon': str(longitude), 'lat': str(latitude), 'range': travel_range, 'mode': travel_mode,
                   'type': isoline_type, 'format': output_format}
         return requests.get(url=request_url, params=params, headers=self._headers).json()
-
-    def batch_geocode(self, addresses: List[str], batch_len: int = 1000,
-                      parameters: Dict[str, str] = None) -> List[dict]:
-        """Returns batch geocoding results as a list of dictionaries.
-
-        Warning: this whole process may take long time (hours), depending on the size of the input, the number of
-        batches, and the level of your geoapify.com subscription.
-
-        Arguments:
-            addresses: search queries as list of strings; one address = one string.
-            batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
-            parameters: optional parameters as key value paris. See the geoapify.com API documentation.
-
-        Returns:
-            List of structured, geocoded, and enriched address records.
-        """
-        warnings.warn('Method Client.batch_geocode is deprecated - use Client.batch.geocode instead.')
-        return self.batch.geocode(locations=addresses, batch_len=batch_len, parameters=parameters,
-                                  simplify_output=True)
-
-    def batch_reverse_geocode(self, geocodes: List[Tuple[float, float]], batch_len: int = 1000,
-                              parameters: Dict[str, str] = None) -> List[dict]:
-        """Returns batch reverse geocoding results as a list of dictionaries.
-
-        Warning: this whole process may take long time (hours), depending on the size of the input, the number of
-        batches, and the level of your geoapify.com subscription.
-
-        Arguments:
-            geocodes: list of longitude, latitude tuples.
-            batch_len: split addresses into chunks of maximal size batch_len for parallel processing.
-            parameters: optional parameters as dictionary. See the geoapify.com API documentation.
-
-        Returns:
-            List of structured, reverse geocoded, and enriched address records.
-        """
-        warnings.warn('Method Client.batch_reverse_geocode is deprecated - use Client.batch.reverse_geocode instead.')
-        return self.batch.reverse_geocode(geocodes=geocodes, batch_len=batch_len, parameters=parameters,
-                                          simplify_output=True)
