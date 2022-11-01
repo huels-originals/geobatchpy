@@ -1,21 +1,24 @@
-"""Python client for Geoapify
+"""A Python client for the Geoapify API.
 
 """
 import logging
-import warnings
 from typing import Dict, List, Tuple, Union
 
 import requests
 
 from geobatchpy.batch import BatchClient
-from geobatchpy.utils import get_api_url, API_GEOCODE, API_REVERSE_GEOCODE, API_PLACES, API_PLACE_DETAILS, API_ISOLINE
+from geobatchpy.boundaries import BoundariesClient
+from geobatchpy.utils import (
+    get_api_key, get_api_url, API_GEOCODE, API_REVERSE_GEOCODE, API_PLACES, API_PLACE_DETAILS, API_ISOLINE
+)
 
 
 class Client:
 
     def __init__(self, api_key: str):
-        self._api_key = api_key
+        self._api_key = get_api_key(api_key=api_key)
         self.batch = BatchClient(api_key=api_key)
+        self.boundaries = BoundariesClient(api_key=api_key)
         self._headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         self._logger = logging.getLogger(__name__)
 

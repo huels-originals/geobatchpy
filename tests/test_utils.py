@@ -6,8 +6,8 @@ from geobatchpy.utils import get_api_url, get_api_key, API_PLACES
 
 
 def test_get_api_url():
-    url = get_api_url(api=API_PLACES, api_key='123', version=52)
-    assert url == 'https://api.geoapify.com/v52/places?apiKey=123'
+    url = get_api_url(api='/v2/hello/world', api_key='123', version=52)
+    assert url == 'https://api.geoapify.com/v52/hello/world?apiKey=123'
 
     os.environ['GEOAPIFY_KEY'] = '456'
 

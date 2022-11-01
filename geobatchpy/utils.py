@@ -10,6 +10,8 @@ API_PLACE_DETAILS = '/v2/place-details'
 API_PLACES = '/v2/places'
 API_BATCH = '/v1/batch'
 API_ISOLINE = '/v1/isoline'
+API_BOUNDARIES_PART_OF = '/v1/boundaries/part-of'
+API_BOUNDARIES_CONSISTS_OF = '/v1/boundaries/consists-of'
 
 Json = Union[Dict[str, Any], List[Any]]  # A superset of the JSON specification, excluding atomic objects
 
@@ -40,7 +42,7 @@ def get_api_url(api: str, api_key: str = None, version: int = None) -> str:
         # Use version as defined above
         return f'https://api.geoapify.com{api}?apiKey={api_key}'
     else:
-        api = f'/v{version}/' + api.split('/')[-1]
+        api = f'/v{version}/' + '/'.join(api.split('/')[2:])
         return f'https://api.geoapify.com{api}?apiKey={api_key}'
 
 
