@@ -12,6 +12,7 @@ API_BATCH = '/v1/batch'
 API_ISOLINE = '/v1/isoline'
 API_BOUNDARIES_PART_OF = '/v1/boundaries/part-of'
 API_BOUNDARIES_CONSISTS_OF = '/v1/boundaries/consists-of'
+API_ROUTE_MATRIX = '/v1/routematrix'
 
 Json = Union[Dict[str, Any], List[Any]]  # A superset of the JSON specification, excluding atomic objects
 
