@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "geobatchpy"
-version = "0.2.1"
+version = "0.2.2"
 description = "A CLI and Python Client for the Geoapify API."
 authors = ["Paul Kinsvater <paul.kinsvater@gmail.com>", "Nikita Butsch <nikitabutsch@gmail.com>"]
 keywords = ["geoapify", "geocoding", "openstreetmap", "geojson"]

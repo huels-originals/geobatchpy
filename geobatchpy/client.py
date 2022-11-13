@@ -9,7 +9,8 @@ import requests
 from geobatchpy.batch import BatchClient
 from geobatchpy.boundaries import BoundariesClient
 from geobatchpy.utils import (
-    get_api_key, get_api_url, API_GEOCODE, API_REVERSE_GEOCODE, API_PLACES, API_PLACE_DETAILS, API_ISOLINE
+    get_api_key, get_api_url, API_GEOCODE, API_REVERSE_GEOCODE, API_PLACES, API_PLACE_DETAILS, API_ISOLINE,
+    API_ROUTE_MATRIX
 )
 
 
@@ -155,3 +156,28 @@ class Client:
         params = {'lon': str(longitude), 'lat': str(latitude), 'range': travel_range, 'mode': travel_mode,
                   'type': isoline_type, 'format': output_format}
         return requests.get(url=request_url, params=params, headers=self._headers).json()
+
+    def route_matrix(self, source_geocodes: List[Tuple[float, float]],
+                     target_geocodes: List[Tuple[float, float]] = None,
+                     travel_mode: str = 'drive', ) -> dict:
+        """Returns route matrix results as a dictionary.
+
+        `target_geocodes = None` translates to `target_geocodes = source_geocodes`.
+
+        Args:
+            source_geocodes: list of (lon, lat) tuples of source locations.
+            target_geocodes: list of (lon, lat) tuples of target locations or None.
+            travel_mode: one of 'drive', 'truck', 'walk', 'bicycle'.
+
+        Returns:
+
+        """
+        request_url = get_api_url(api=API_ROUTE_MATRIX, api_key=self._api_key)
+        if target_geocodes is None:
+            target_geocodes = source_geocodes
+        data = {
+            'mode': travel_mode,
+            'sources': [{'location': geocode} for geocode in source_geocodes],
+            'targets': [{'location': geocode} for geocode in target_geocodes]
+        }
+        return requests.post(url=request_url, json=data, headers=self._headers).json()
